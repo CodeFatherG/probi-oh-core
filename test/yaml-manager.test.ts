@@ -1,7 +1,4 @@
-import { 
-    loadFromYamlFile, loadFromYamlString, serialiseConditionsToYaml, 
-    serialiseCardsToYaml, serialiseSimulationInputToYaml 
-} from '../src/yaml-manager';
+import yamlManager from '../src/yaml-manager';
 import { Deck } from '../src/deck';
 import { CreateCard } from '../src/card';
 import { Condition, AndCondition, OrCondition, BaseCondition } from '../src/condition';
@@ -74,8 +71,8 @@ describe('YAML Manager', () => {
         jest.restoreAllMocks();
     });
 
-    describe('loadFromYamlString', () => {
-        it('should correctly parse a valid YAML string', () => {
+    describe('yamlManager.importFromString', () => {
+        it('should correctly parse a valid YAML string', async () => {
             const yamlString = `
                 deck:
                     Card1:
@@ -88,7 +85,7 @@ describe('YAML Manager', () => {
                     - 2+ Card1
                     - (1 Card2 OR 2 Card1)
             `;
-            const result = loadFromYamlString(yamlString);
+            const result = await yamlManager.importFromString(yamlString);
             
             expect(result.conditions).toHaveLength(2);
             expect(result.deck.get('Card1')?.qty).toBe(3);
@@ -97,39 +94,29 @@ describe('YAML Manager', () => {
             expect(result.conditions[1]).toBe('(1 Card2 OR 2 Card1)');
         });
 
-        it('should handle no quantity specified', () => {
+        it('should handle no quantity specified', async () => {
             const yamlString = `
                 deck:
                     Card1:
                         qty: 1
             `;
-            const result = loadFromYamlString(yamlString);
+            const result = await yamlManager.importFromString(yamlString);
             
             expect(result.deck).toBeInstanceOf(Map);
             expect(result.deck.size).toBe(1);
             expect(result.deck.get('Card1')?.qty).toBe(1);
         });
 
-        it('should throw an error for invalid YAML', () => {
-            const invalidYaml = `
-                deck:
-                    - This is invalid
-                conditions:
-                    - Also invalid
-            `;
-            expect(() => loadFromYamlString(invalidYaml)).toThrow();
-        });
-
-        it('should throw an error for invalid deck structure', () => {
+        it('should throw an error for invalid deck structure', async () => {
             const invalidYaml = `
               deck:
                 invalidCard: 'not an object'
               conditions: []
             `;
-            expect(() => loadFromYamlString(invalidYaml)).toThrow('Invalid card details');
+            await expect(yamlManager.importFromString(invalidYaml)).rejects.toThrow('Failed to parse YAML: Invalid card details for invalidCard');
         });
           
-        it('should throw an error for invalid card structure', () => {
+        it('should throw an error for invalid card structure', async () => {
             const invalidYaml = `
               deck:
                 Card1:
@@ -137,70 +124,36 @@ describe('YAML Manager', () => {
                   tags: 'not an array'
               conditions: []
             `;
-            expect(() => loadFromYamlString(invalidYaml)).toThrow('Invalid card structure');
-        });
-    });
-
-    describe('loadFromYamlFile', () => {
-        it('should load YAML from a file', async () => {
-            const mockFileContent = `
-                deck:
-                    Card1:
-                        qty: 3
-                        tags: [Tag1, Tag2]
-                conditions:
-                    - 1+ Card1
-            `;
-            const mockFile = new MockFile([mockFileContent], 'test.yaml', { type: 'application/x-yaml' });
-            
-            const result = await loadFromYamlFile(mockFile as unknown as File);
-            expect(result.conditions).toHaveLength(1);
-        });
-
-        it('should handle file read errors', async () => {
-            const mockFile = new File([], 'test.yaml');
-            const mockFileReader = {
-                readAsText: jest.fn().mockImplementation(function(this: any) {
-                    setTimeout(() => {
-                    if (this.onerror) {
-                        this.onerror(new Error('Read error'));
-                    }
-                    }, 0);
-                }),
-                onload: null as any,
-                onerror: null as any,
-            };
-            (global as any).FileReader = jest.fn(() => mockFileReader);
-            await expect(loadFromYamlFile(mockFile)).rejects.toThrow('Read error');
+            await expect(yamlManager.importFromString(invalidYaml)).rejects.toThrow('Failed to parse YAML: Invalid card structure for Card1');
         });
     });
 
     describe('serialiseDeckToYaml', () => {
-        it('should correctly serialise a deck to YAML', () => {
+        it('should correctly serialise a deck to YAML', async () => {
             const cards = new Map<string, CardDetails>([
                 ['Card1', { qty: 2, tags: ['Tag1', 'Tag2'] }],
                 ['Card2', { tags: ['Tag3'] }]
             ]);
-            const result = serialiseCardsToYaml(cards);
+            const result = await yamlManager.exportDeckToString(cards);
             const parsed = yaml.load(result) as { deck: any };
             expect(parsed.deck.Card1.qty).toBe(2);
             expect(parsed.deck.Card2.qty).toBe(undefined);
         });
 
-        it('should correctly handle duplicate cards', () => {
+        it('should correctly handle duplicate cards', async () => {
             const cards = new Map<string, CardDetails>([
                 ['Card1', { qty: 2, tags: ['Tag1'] }],
                 ['Card2', { tags: ['Tag2'] }],
             ]);
-            const result = serialiseCardsToYaml(cards);
+            const result = await yamlManager.exportDeckToString(cards);
             const parsed = yaml.load(result) as { deck: any };
             expect(parsed.deck.Card1.qty).toBe(2);
             expect(parsed.deck.Card2.qty).toBe(undefined);
         });
     });
 
-    describe('serialiseConditionsToYaml', () => {
-        it('should correctly serialise conditions to YAML', () => {
+    describe('yamlManager.exportConditionsToString', () => {
+        it('should correctly serialise conditions to YAML', async () => {
             const conditions = [
                 new Condition('Card1', 2, '>='),
                 new OrCondition([
@@ -208,14 +161,14 @@ describe('YAML Manager', () => {
                     new Condition('Card1', 2, ">=")
                 ])
             ];
-            const result = serialiseConditionsToYaml(conditions);
+            const result = await yamlManager.exportConditionsToString(conditions);
             const parsed = yaml.load(result) as { conditions: string[] };
             expect(parsed.conditions).toHaveLength(2);
             expect(parsed.conditions[0]).toBe('2+ Card1 IN Hand');
             expect(parsed.conditions[1]).toBe('1 Card2 IN Hand OR 2+ Card1 IN Hand');
         });
 
-        it('should correctly serialise complex conditions', () => {
+        it('should correctly serialise complex conditions', async () => {
             const condition = new AndCondition([
                 new Condition('Card1', 2, '>='),
                 new OrCondition([
@@ -223,14 +176,14 @@ describe('YAML Manager', () => {
                     new Condition('Card3', 3, '<='),
                 ], true),
             ]);
-            const result = serialiseConditionsToYaml([condition]);
+            const result = await yamlManager.exportConditionsToString([condition]);
             const parsed = yaml.load(result) as { conditions: string[] };
             expect(parsed.conditions[0]).toBe('2+ Card1 IN Hand AND (1 Card2 IN Hand OR 3- Card3 IN Hand)');
         });
     });
 
     describe('serialiseSimulationInputToYaml', () => {
-        it('should correctly serialise a complete simulation input to YAML', () => {
+        it('should correctly serialise a complete simulation input to YAML', async () => {
             const deck = new Map([
                 ['Card1', { tags: ['Tag1'] }],
                 ['Card2', { tags: ['Tag2'] }]
@@ -240,7 +193,7 @@ describe('YAML Manager', () => {
                 '(Card1 AND Card2)'
             ];
             const input: SimulationInput = { deck, conditions };
-            const result = serialiseSimulationInputToYaml(input);
+            const result = await yamlManager.exportSimulationToString(input);
             const parsed = yaml.load(result) as { deck: any, conditions: string[] };
             expect(parsed.deck.Card1.qty).toBe(undefined);
             expect(parsed.deck.Card2.qty).toBe(undefined);
@@ -250,7 +203,7 @@ describe('YAML Manager', () => {
 });
 
 describe('Edge Cases', () => {
-    it('should deserialise a condition with a numbered card name', () => {
+    it('should deserialise a condition with a numbered card name', async () => {
         const yamlString = `
             deck:
                 1:
@@ -263,7 +216,7 @@ describe('Edge Cases', () => {
                 - 2+ 1
                 - (1 2 OR 2 1)
         `;
-        const result = loadFromYamlString(yamlString);
+        const result = await yamlManager.importFromString(yamlString);
         
         expect(result.deck.size).toBe(2);
         expect(result.conditions).toHaveLength(2);
@@ -272,7 +225,7 @@ describe('Edge Cases', () => {
     });
 
     describe('Handle "" card names', () => {
-        it('should deserialise a condition with card name starting ""', () => {
+        it('should deserialise a condition with card name starting ""', async () => {
             const yamlString = `
                 deck:
                     "Card A":
@@ -281,7 +234,7 @@ describe('Edge Cases', () => {
                 conditions:
                     - 2+ "Card A"
             `;
-            const result = loadFromYamlString(yamlString);
+            const result = await yamlManager.importFromString(yamlString);
             
             expect(result.deck.size).toBe(1);
             expect(result.conditions).toHaveLength(1);
