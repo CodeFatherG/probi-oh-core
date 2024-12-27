@@ -159,7 +159,7 @@ function tokenize(input: string): Token[] {
     }
 
     function tokenizeName(): boolean {
-        const NAME_CHARS = /[a-zA-Z0-9\s\-',.&:!?"]+$/;
+        const NAME_CHARS = /[a-zA-Z0-9\s\-',.&:!?@"]+$/;
         let char = input[current];
 
         function isCharIllegal(char: string): boolean {
