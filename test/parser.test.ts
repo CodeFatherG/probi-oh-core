@@ -356,7 +356,8 @@ describe('parseCondition', () => {
             "Level Up!",
             "Go Fish?",
             "Magic: The Gathering",
-            "\"Card Name\""
+            "\"Card Name\"",
+            "@Ignister"
             ];
         
             validNames.forEach(name => {
@@ -368,7 +369,6 @@ describe('parseCondition', () => {
 
         it('should reject invalid card names', () => {
             const invalidNames = [
-                "Invalid@Card",
                 "No/Slashes",
                 "No*Asterisks",
                 "No+Plus",
