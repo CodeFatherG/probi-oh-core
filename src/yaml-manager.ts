@@ -1,7 +1,6 @@
 import yaml from 'js-yaml';
 import { BaseCondition } from './condition';
-import { CardDetails } from "@probi-oh/types";
-import { SimulationInput } from './simulation-input';
+import { CardDetails, SimulationInput } from "@probi-oh/types";
 import { DataFileManager } from './data-file';
 
 class YamlManager implements DataFileManager {

@@ -1,6 +1,5 @@
-import { CardDetails } from "@probi-oh/types";
+import { CardDetails, SimulationInput} from "@probi-oh/types";
 import { BaseCondition } from "./condition";
-import { SimulationInput } from "./simulation-input";
 
 export interface DataFileManager {
     importFromString(data: string): Promise<SimulationInput>;

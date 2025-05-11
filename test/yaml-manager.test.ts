@@ -3,8 +3,7 @@ import { Deck } from '../src/deck';
 import { CreateCard } from '../src/card';
 import { Condition, AndCondition, OrCondition, BaseCondition } from '../src/condition';
 import * as yaml from 'js-yaml';
-import { SimulationInput } from '../src/simulation-input';
-import { CardDetails } from "@probi-oh/types";
+import { CardDetails, SimulationInput } from "@probi-oh/types";
 
 // Mock ProgressEvent
 class MockProgressEvent {
