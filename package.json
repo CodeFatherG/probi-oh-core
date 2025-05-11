@@ -6,8 +6,14 @@
     "description": "Core functionality for Yu-Gi-Oh! Probability Simulator",
     "main": "build/index.js",
     "types": "build/index.d.ts",
+    "workspaces": [
+        "types"
+    ],
     "scripts": {
         "build": "npm run generate-index && tsc",
+        "build:all": "npm run build && npm run build:types",
+        "build:dependencies": "npm run build:types",
+        "build:types": "npm run build -w types",
         "generate-index": "ts-node generate-index.ts",
         "test": "jest",
         "test:coverage": "jest --coverage",
@@ -21,13 +27,13 @@
         "@typescript-eslint/parser": "^6.21.0",
         "eslint": "^8.57.0",
         "eslint-plugin-jest": "^28.6.0",
-        "jest": "^29.7.0",
+        "jest": "^29.7.0", 
         "ts-jest": "^29.1.5",
         "ts-node": "^10.9.2",
         "typescript": "^5.3.3"
     },
     "dependencies": {
-        "@probi-oh/types": "*",
+        "@probi-oh/types": "^1.0.0",
         "js-yaml": "^4.1.0"
     }
 }
