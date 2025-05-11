@@ -1,5 +1,5 @@
 import { Card, CreateCard, FreeCard } from "./card";
-import { CostType } from "./card-details";
+import { CostType } from "@probi-oh/types";
 import { Deck } from "./deck";
 
 /**

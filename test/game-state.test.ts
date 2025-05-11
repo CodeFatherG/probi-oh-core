@@ -1,7 +1,7 @@
 import { GameState, excavationCb } from '../src/game-state';
 import { Deck } from '../src/deck';
 import { Card, CreateCard, FreeCard } from '../src/card';
-import { CardDetails, CostType, RestrictionType } from '../src/card-details';
+import { CardDetails, CostType, RestrictionType } from "@probi-oh/types";
 
 describe('GameState', () => {
     let testDeck: Deck;

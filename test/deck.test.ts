@@ -1,6 +1,6 @@
 import { buildDeck, Deck } from '../src/deck';
 import { Card, CreateCard } from '../src/card';
-import { CardDetails } from '../src/card-details';
+import { CardDetails } from "@probi-oh/types";
 
 describe('Deck', () => {
     describe('constructor', () => {
