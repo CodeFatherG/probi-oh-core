@@ -4,7 +4,7 @@ import { CreateCard } from '../src/card';
 import { Condition, AndCondition, OrCondition, BaseCondition } from '../src/condition';
 import * as yaml from 'js-yaml';
 import { SimulationInput } from '../src/simulation-input';
-import { CardDetails } from '../src/card-details';
+import { CardDetails } from "@probi-oh/types";
 
 // Mock ProgressEvent
 class MockProgressEvent {

@@ -1,4 +1,4 @@
-import { CardDetails } from "./card-details";
+import { CardDetails } from "@probi-oh/types";
 import { Card, CreateCard } from "./card";
 
 /** Represents a deck of cards */

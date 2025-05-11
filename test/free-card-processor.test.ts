@@ -1,5 +1,5 @@
 import { Card, FreeCard, CreateCard } from "../src/card";
-import { CostType, RestrictionType, ConditionType, CardDetails } from "../src/card-details";
+import { CostType, RestrictionType, ConditionType, CardDetails } from "@probi-oh/types";
 import { Condition, AndCondition, OrCondition } from "../src/condition";
 import { 
     freeCardIsUsable, 

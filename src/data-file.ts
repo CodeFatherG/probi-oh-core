@@ -1,4 +1,4 @@
-import { CardDetails } from "./card-details";
+import { CardDetails } from "@probi-oh/types";
 import { BaseCondition } from "./condition";
 import { SimulationInput } from "./simulation-input";
 

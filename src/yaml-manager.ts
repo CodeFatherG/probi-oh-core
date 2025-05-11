@@ -1,6 +1,6 @@
 import yaml from 'js-yaml';
 import { BaseCondition } from './condition';
-import { CardDetails } from './card-details';
+import { CardDetails } from "@probi-oh/types";
 import { SimulationInput } from './simulation-input';
 import { DataFileManager } from './data-file';
 

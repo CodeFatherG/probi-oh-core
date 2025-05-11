@@ -1,5 +1,5 @@
 import { Card, CreateCard, FreeCard } from '../src/card';
-import { CardDetails, CostType, ConditionType, RestrictionType } from '../src/card-details';
+import { CardDetails, CostType, ConditionType, RestrictionType } from "@probi-oh/types";
 
 describe('Card', () => {
     const cardName = 'Blue-Eyes White Dragon';

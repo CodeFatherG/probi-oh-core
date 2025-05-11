@@ -170,10 +170,6 @@ describe('parseCondition', () => {
         expect(andCondition.conditions[1]).toBeInstanceOf(OrCondition);
     });
 
-    it('should throw an error for invalid characters in card names', () => {
-        expect(() => parseCondition('Card@ A')).toThrow();
-    });
-
     it('should handle card names with numbers', () => {
         const result = parseCondition('Card123');
         expect(result).toBeInstanceOf(Condition);

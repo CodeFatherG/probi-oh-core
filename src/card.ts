@@ -1,4 +1,4 @@
-import { CardDetails, ConditionType, CostType, RestrictionType } from "./card-details";
+import { CardDetails, ConditionType, CostType, RestrictionType } from '@probi-oh/types'
 
 /**
  * Represents a card in the game.
