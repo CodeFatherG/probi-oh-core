@@ -11,8 +11,8 @@
     ],
     "scripts": {
         "build": "npm run generate-index && tsc",
-        "build:all": "npm run build && npm run build:types",
-        "build:dependencies": "npm run build:types",
+        "build:all": "npm run build && npm run build:deps",
+        "build:deps": "npm run build:types",
         "build:types": "npm run build -w types",
         "generate-index": "ts-node generate-index.ts",
         "test": "jest",
