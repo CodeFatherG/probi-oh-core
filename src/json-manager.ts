@@ -1,17 +1,15 @@
-import yaml from 'js-yaml';
 import { CardDetails, Condition, SimulationInput } from "@probi-oh/types";
 import { DataFileManager } from './data-file';
 import { conditionToString } from './condition';
-import { parseCondition } from './parser';
 
-class YamlManager implements DataFileManager {
-    private static instance: YamlManager;
+class JsonManager implements DataFileManager {
+    private static instance: JsonManager;
 
-    public static getInstance(): YamlManager {
-        if (!YamlManager.instance) {
-            YamlManager.instance = new YamlManager();
+    public static getInstance(): JsonManager {
+        if (!JsonManager.instance) {
+            JsonManager.instance = new JsonManager();
         }
-        return YamlManager.instance;
+        return JsonManager.instance;
     }
 
     /**
@@ -37,30 +35,21 @@ class YamlManager implements DataFileManager {
      * Loads a SimulationInput from a YAML string
      * @param yamlString - The YAML string to parse
      */
-    public async importFromString(yamlString: string): Promise<SimulationInput> {
-        try {
+    public async importFromString(jsonString: string): Promise<SimulationInput> {
+        const input: SimulationInput = {
+            deck: new Map<string, CardDetails>(),
+            conditions: [],
+        };
 
-            const input = yaml.load(yamlString) as { deck: Map<string, CardDetails>, conditions: string[] };
+        const parsed = JSON.parse(jsonString);
+        input.deck = this.getCardList(parsed.deck);
+        input.conditions = parsed.conditions;
 
-            // Validate deck structure
-            for (const [cardName, cardDetails] of Object.entries(input.deck)) {
-                if (typeof cardDetails !== 'object' || Array.isArray(cardDetails)) {
-                    throw new Error(`Invalid card details for ${cardName}`);
-                }
-                if (typeof cardDetails.qty !== 'number') {
-                    throw new Error(`Invalid card structure for ${cardName}`);
-                }
-            }
-
-            return {
-                deck: this.getCardList(input.deck),
-                conditions: input.conditions.flatMap(condition => {
-                    return parseCondition(condition);
-                })
-            };
-        } catch (error) {
-            throw new Error(`Failed to parse YAML: ${(error as Error).message}`);
+        if (parsed.deckName) {   
+            input.deckName = parsed.deckName;
         }
+
+        return input;
     }
 
     public async exportDeckToString(cards: Map<string, CardDetails>): Promise<string> {
@@ -77,7 +66,7 @@ class YamlManager implements DataFileManager {
                 }
             }
         });
-        return yaml.dump({ deck: deckObject });
+        return JSON.stringify(deckObject);
     }
 
     /**
@@ -85,8 +74,7 @@ class YamlManager implements DataFileManager {
      * @param conditions - The conditions to serialise
      */
     public async exportConditionsToString(conditions: Condition[]): Promise<string> {
-        const conditionStrings = conditions.map(condition => conditionToString(condition));
-        return yaml.dump({ conditions: conditionStrings });
+        return JSON.stringify(conditions);
     }
 
     /**
@@ -101,9 +89,9 @@ class YamlManager implements DataFileManager {
         }
 
         const deckYaml = await this.exportDeckToString(input.deck);
-        const conditionsYaml = yaml.dump({ conditions: input.conditions });
+        const conditionsYaml = await this.exportConditionsToString(input.conditions);
         return deckYaml + '\n' + conditionsYaml;
     }
 }
 
-export default YamlManager.getInstance();
+export default JsonManager.getInstance();
