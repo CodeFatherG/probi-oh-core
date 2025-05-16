@@ -1,6 +1,5 @@
+import { CardCondition, CardDetails, ConditionLocation, ConditionOperator, FreeCardCondition, FreeCardCost, FreeCardRestriction } from "@probi-oh/types";
 import { Card, FreeCard, CreateCard } from "../src/card";
-import { CostType, RestrictionType, ConditionType, CardDetails } from "@probi-oh/types";
-import { Condition, AndCondition, OrCondition } from "../src/condition";
 import { 
     freeCardIsUsable, 
     excavate,
@@ -49,7 +48,7 @@ describe('Free Card Processor', () => {
 
         test('should return false when NoMoreDraws restriction is active', () => {
             const restrictedCardDetails: CardDetails = {
-                free: { oncePerTurn: false, count: 1, restriction: [RestrictionType.NoMoreDraws] }
+                free: { oncePerTurn: false, count: 1, restriction: [FreeCardRestriction.NoMoreDraws] }
             };
             const restrictedCard = CreateCard('Restricted Card', restrictedCardDetails) as FreeCard;
             const freeCardDetails: CardDetails = {
@@ -63,7 +62,7 @@ describe('Free Card Processor', () => {
 
         test('should return false when NoPreviousDraws restriction is violated', () => {
             const freeCardDetails: CardDetails = {
-                free: { oncePerTurn: false, count: 1, restriction: [RestrictionType.NoPreviousDraws] }
+                free: { oncePerTurn: false, count: 1, restriction: [FreeCardRestriction.NoPreviousDraws] }
             };
             const freeCard = CreateCard('Test Card', freeCardDetails) as FreeCard;
             mockGameState.addCardToHand(freeCard);
@@ -73,7 +72,7 @@ describe('Free Card Processor', () => {
 
         test('should return false when cost cannot be paid', () => {
             const freeCardDetails: CardDetails = {
-                free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromHand, value: 2 } }
+                free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromHand, value: 2 } }
             };
             const freeCard = CreateCard('Test Card', freeCardDetails) as FreeCard;
             mockGameState.addCardToHand(freeCard);
@@ -90,7 +89,7 @@ describe('Free Card Processor', () => {
     
             test('should return false when not enough cards to banish from deck', () => {
                 const freeCard = CreateCard('Deck Banish Card', { 
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromDeck, value: 3 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromDeck, value: 3 } }
                 }) as FreeCard;
                 mockGameState.addCardToHand(freeCard);
                 mockGameState.mockDeck.setDeckList([CreateCard('Card 1', {}), CreateCard('Card 2', {})]);
@@ -99,7 +98,7 @@ describe('Free Card Processor', () => {
     
             test('should return true when enough cards to banish from hand', () => {
                 const freeCard = CreateCard('Hand Banish Card', { 
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromHand, value: 2 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromHand, value: 2 } }
                 }) as FreeCard;
                 mockGameState.setHand([freeCard, CreateCard('Card 1', {}), CreateCard('Card 2', {})]);
                 mockGameState.mockDeck.setDeckList([...Array(10)].map(() => CreateCard('Deck Card', {})));
@@ -108,7 +107,7 @@ describe('Free Card Processor', () => {
     
             test('should return false when not enough cards to discard', () => {
                 const freeCard = CreateCard('Discard Card', { 
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.Discard, value: 3 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.Discard, value: 3 } }
                 }) as FreeCard;
                 mockGameState.setHand([freeCard, CreateCard('Card 1', {})]);
                 mockGameState.mockDeck.setDeckList([...Array(10)].map(() => CreateCard('Deck Card', {})));
@@ -117,7 +116,7 @@ describe('Free Card Processor', () => {
     
             test('should return true for PayLife cost', () => {
                 const freeCard = CreateCard('Pay Life Card', { 
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.PayLife, value: 1000 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.PayLife, value: 1000 } }
                 }) as FreeCard;
                 mockGameState.addCardToHand(freeCard);
                 mockGameState.mockDeck.setDeckList([...Array(10)].map(() => CreateCard('Deck Card', {})));
@@ -135,7 +134,7 @@ describe('Free Card Processor', () => {
     
             test('should return true for NoSpecialSummon restriction', () => {
                 const freeCard = CreateCard('No Special Summon Card', { 
-                    free: { oncePerTurn: false, count: 1, restriction: [RestrictionType.NoSpecialSummon] }
+                    free: { oncePerTurn: false, count: 1, restriction: [FreeCardRestriction.NoSpecialSummon] }
                 }) as FreeCard;
                 mockGameState.addCardToHand(freeCard);
                 mockGameState.mockDeck.setDeckList([...Array(10)].map(() => CreateCard('Deck Card', {})));
@@ -144,7 +143,7 @@ describe('Free Card Processor', () => {
     
             test('should return false for NoMoreDraws restriction when a free card has been played', () => {
                 const playedFreeCard = CreateCard('No More Draws Card', { 
-                    free: { oncePerTurn: false, count: 1, restriction: [RestrictionType.NoMoreDraws] }
+                    free: { oncePerTurn: false, count: 1, restriction: [FreeCardRestriction.NoMoreDraws] }
                 }) as FreeCard;
                 const freeCard = CreateCard('Played Free Card', { free: { oncePerTurn: false, count: 1 } }) as FreeCard;
                 mockGameState.addCardToHand(freeCard);
@@ -181,7 +180,13 @@ describe('Free Card Processor', () => {
                 free: { oncePerTurn: false, count: 1, excavate: { count: 3, pick: 2 } }
             };
             const freeCard = CreateCard('Excavate Card', freeCardDetails) as FreeCard;
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const excavatedCards = [
                 CreateCard('Excavated 1', {}),
                 CreateCard('Excavated 2', {}),
@@ -204,7 +209,13 @@ describe('Free Card Processor', () => {
             const freeCard = CreateCard('Test Card', freeCardDetails) as FreeCard;
             mockGameState.addCardToHand(freeCard);
             mockGameState.mockDeck.setDeckList([CreateCard('Drawn 1', {}), CreateCard('Drawn 2', {})]);
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const simulationBranch = new MockSimulationBranch(mockGameState, condition);
 
             processFreeCard(simulationBranch, freeCard);
@@ -219,7 +230,13 @@ describe('Free Card Processor', () => {
                 free: { oncePerTurn: false, count: 1 }
             };
             const freeCard = CreateCard('Not In Hand', freeCardDetails) as FreeCard;
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const simulationBranch = new MockSimulationBranch(mockGameState, condition);
 
             processFreeCard(simulationBranch, freeCard);
@@ -235,7 +252,13 @@ describe('Free Card Processor', () => {
             const freeCard = CreateCard('Test Card', freeCardDetails) as FreeCard;
             mockGameState.addCardToHand(freeCard);
             mockGameState.setCardsPlayed([freeCard]);
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const simulationBranch = new MockSimulationBranch(mockGameState, condition);
 
             processFreeCard(simulationBranch, freeCard);
@@ -246,12 +269,18 @@ describe('Free Card Processor', () => {
 
         test('should process card with cost', () => {
             const freeCardDetails: CardDetails = {
-                free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromHand, value: 1 } }
+                free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromHand, value: 1 } }
             };
             const freeCard = CreateCard('Cost Card', freeCardDetails) as FreeCard;
             const costCard = CreateCard('Cost Card', {});
             mockGameState.setHand([freeCard, costCard]);
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const simulationBranch = new MockSimulationBranch(mockGameState, condition);
 
             processFreeCard(simulationBranch, freeCard);
@@ -263,13 +292,19 @@ describe('Free Card Processor', () => {
 
         test('should process card with cost and not spend the satisfactory card', () => {
             const freeCardDetails: CardDetails = {
-                free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromHand, value: 1 } }
+                free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromHand, value: 1 } }
             };
             const freeCard = CreateCard('Free Card', freeCardDetails) as FreeCard;
             const costCard = CreateCard('Cost Card', {});
             const satisfactoryCard = CreateCard('Test Card', {});
             mockGameState.setHand([freeCard, costCard, satisfactoryCard]);
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const simulationBranch = new MockSimulationBranch(mockGameState, condition);
 
             processFreeCard(simulationBranch, freeCard);
@@ -287,7 +322,13 @@ describe('Free Card Processor', () => {
             const freeCard = CreateCard('Excavate Card', freeCardDetails) as FreeCard;
             mockGameState.addCardToHand(freeCard);
             mockGameState.mockDeck.setDeckList([CreateCard('Excavated 1', {}), CreateCard('Excavated 2', {})]);
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const simulationBranch = new MockSimulationBranch(mockGameState, condition);
 
             processFreeCard(simulationBranch, freeCard);
@@ -299,11 +340,17 @@ describe('Free Card Processor', () => {
 
         test('should process card with post-condition', () => {
             const freeCardDetails: CardDetails = {
-                free: { oncePerTurn: false, count: 1, condition: { type: ConditionType.Discard, value: 1 } }
+                free: { oncePerTurn: false, count: 1, condition: { type: FreeCardCondition.Discard, value: 1 } }
             };
             const freeCard = CreateCard('Post-Condition Card', freeCardDetails) as FreeCard;
             mockGameState.setHand([freeCard]);
-            const condition = new Condition('Test Card', 1);
+            const condition: CardCondition = {
+                kind: 'card',
+                cardName: 'Test Card', 
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: ConditionLocation.HAND
+            };
             const simulationBranch = new MockSimulationBranch(mockGameState, condition);
 
             processFreeCard(simulationBranch, freeCard);
@@ -316,7 +363,7 @@ describe('Free Card Processor', () => {
         describe('Cost processing', () => {
             test('should process card with BanishFromDeck cost', () => {
                 const freeCardDetails: CardDetails = {
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromDeck, value: 2 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromDeck, value: 2 } }
                 };
                 const freeCard = CreateCard('Deck Banish Card', freeCardDetails) as FreeCard;
                 const deckCards = [
@@ -326,7 +373,13 @@ describe('Free Card Processor', () => {
                 ];
                 mockGameState.addCardToHand(freeCard);
                 mockGameState.mockDeck.setDeckList(deckCards);
-                const condition = new Condition('Test Card', 1);
+                const condition: CardCondition = {
+                    kind: 'card',
+                    cardName: 'Test Card', 
+                    cardCount: 1,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                };
                 const simulationBranch = new MockSimulationBranch(mockGameState, condition);
     
                 processFreeCard(simulationBranch, freeCard);
@@ -339,13 +392,19 @@ describe('Free Card Processor', () => {
     
             test('should process card with BanishFromHand cost', () => {
                 const freeCardDetails: CardDetails = {
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromHand, value: 1 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromHand, value: 1 } }
                 };
                 const freeCard = CreateCard('Hand Banish Card', freeCardDetails) as FreeCard;
                 const handCard = CreateCard('Hand Card', {});
                 mockGameState.setHand([freeCard, handCard]);
                 mockGameState.mockDeck.setDeckList([CreateCard('Deck Card', {})]);
-                const condition = new Condition('Test Card', 1);
+                const condition: CardCondition = {
+                    kind: 'card',
+                    cardName: 'Test Card', 
+                    cardCount: 1,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                };
                 const simulationBranch = new MockSimulationBranch(mockGameState, condition);
     
                 processFreeCard(simulationBranch, freeCard);
@@ -357,13 +416,19 @@ describe('Free Card Processor', () => {
     
             test('should process card with Discard cost', () => {
                 const freeCardDetails: CardDetails = {
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.Discard, value: 1 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.Discard, value: 1 } }
                 };
                 const freeCard = CreateCard('Discard Card', freeCardDetails) as FreeCard;
                 const handCard = CreateCard('Hand Card', {});
                 mockGameState.setHand([freeCard, handCard]);
                 mockGameState.mockDeck.setDeckList([CreateCard('Deck Card', {})]);
-                const condition = new Condition('Test Card', 1);
+                const condition: CardCondition = {
+                    kind: 'card',
+                    cardName: 'Test Card', 
+                    cardCount: 1,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                };
                 const simulationBranch = new MockSimulationBranch(mockGameState, condition);
     
                 processFreeCard(simulationBranch, freeCard);
@@ -375,12 +440,18 @@ describe('Free Card Processor', () => {
     
             test('should process card with PayLife cost', () => {
                 const freeCardDetails: CardDetails = {
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.PayLife, value: 1000 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.PayLife, value: 1000 } }
                 };
                 const freeCard = CreateCard('Pay Life Card', freeCardDetails) as FreeCard;
                 mockGameState.addCardToHand(freeCard);
                 mockGameState.mockDeck.setDeckList([CreateCard('Deck Card', {})]);
-                const condition = new Condition('Test Card', 1);
+                const condition: CardCondition = {
+                    kind: 'card',
+                    cardName: 'Test Card', 
+                    cardCount: 1,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                };
                 const simulationBranch = new MockSimulationBranch(mockGameState, condition);
     
                 processFreeCard(simulationBranch, freeCard);
@@ -392,13 +463,19 @@ describe('Free Card Processor', () => {
     
             test('should process card with string value cost', () => {
                 const freeCardDetails: CardDetails = {
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromHand, value: ['Specific Card'] } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromHand, value: ['Specific Card'] } }
                 };
                 const freeCard = CreateCard('String Cost Card', freeCardDetails) as FreeCard;
                 const specificCard = CreateCard('Specific Card', {});
                 mockGameState.setHand([freeCard, specificCard]);
                 mockGameState.mockDeck.setDeckList([CreateCard('Deck Card', {})]);
-                const condition = new Condition('Test Card', 1);
+                const condition: CardCondition = {
+                    kind: 'card',
+                    cardName: 'Test Card', 
+                    cardCount: 1,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                };
                 const simulationBranch = new MockSimulationBranch(mockGameState, condition);
     
                 processFreeCard(simulationBranch, freeCard);
@@ -411,12 +488,18 @@ describe('Free Card Processor', () => {
     
             test('should not process card when cost cannot be paid', () => {
                 const freeCardDetails: CardDetails = {
-                    free: { oncePerTurn: false, count: 1, cost: { type: CostType.BanishFromHand, value: 2 } }
+                    free: { oncePerTurn: false, count: 1, cost: { type: FreeCardCost.BanishFromHand, value: 2 } }
                 };
                 const freeCard = CreateCard('Unpayable Cost Card', freeCardDetails) as FreeCard;
                 mockGameState.setHand([freeCard]);
                 mockGameState.mockDeck.setDeckList([CreateCard('Deck Card', {})]);
-                const condition = new Condition('Test Card', 1);
+                const condition: CardCondition = {
+                    kind: 'card',
+                    cardName: 'Test Card', 
+                    cardCount: 1,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                };
                 const simulationBranch = new MockSimulationBranch(mockGameState, condition);
     
                 processFreeCard(simulationBranch, freeCard);

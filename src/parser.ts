@@ -1,4 +1,4 @@
-import { AndCondition, BaseCondition, Condition, LocationConditionTarget, OrCondition } from "./condition";
+import { CardCondition, Condition, ConditionLocation, ConditionOperator, ConditionType } from "@probi-oh/types";
 
 /** Represents a token in the parsed input */
 interface Token {
@@ -11,16 +11,16 @@ interface Token {
  * @param tokens - Array of tokens to parse
  * @returns A BaseCondition representing the parsed expression
  */
-function parse(tokens: Token[]): BaseCondition {
+function parse(tokens: Token[]): Condition {
     let current = 0;
 
     /** Walks through tokens and constructs conditions */
-    function walk(): BaseCondition {
+    function walk(): Condition {
 
-        function GetLocationToken(token: {type: string, value: string} | undefined): LocationConditionTarget {
+        function GetLocationToken(token: {type: string, value: string} | undefined): ConditionLocation {
             // If this token is not location then the default location is hand
             if (!token || token?.type !== 'location') {
-                return LocationConditionTarget.Hand;
+                return ConditionLocation.HAND;
             }
 
             current++;
@@ -28,9 +28,9 @@ function parse(tokens: Token[]): BaseCondition {
             // parse the token and return the type
             switch (token.value.toLowerCase()) {
                 case 'deck':
-                    return LocationConditionTarget.Deck;
+                    return ConditionLocation.DECK;
                 case 'hand':
-                    return LocationConditionTarget.Hand;
+                    return ConditionLocation.HAND;
                 default:
                     throw new TypeError('Invalid location: ' + token.value);
             }
@@ -45,12 +45,19 @@ function parse(tokens: Token[]): BaseCondition {
                     current++;
                     const quantity = parseInt(token.value);
                     // Determine the operator based on the presence of + or -
-                    const operator = token.value.includes('+') ? '>=' : token.value.includes('-') ? '<=' : '=';
+                    const operator = token.value.includes('+') ? ConditionOperator.AT_LEAST : token.value.includes('-') ? ConditionOperator.NO_MORE : ConditionOperator.EXACTLY;
 
                     // Check for location token
                     const location = GetLocationToken(tokens[current]);
 
-                    return new Condition(nextToken.value, quantity, operator, location);
+                    const cardCondition: CardCondition = {
+                        kind: 'card',
+                        cardName: nextToken.value,
+                        cardCount: quantity,
+                        operator: operator,
+                        location: location
+                    };
+                    return cardCondition;
                 } else {
                     throw new TypeError('Expected card name after number');
                 }
@@ -63,7 +70,14 @@ function parse(tokens: Token[]): BaseCondition {
             // Check for location token
             const location = GetLocationToken(tokens[current]);
 
-            return new Condition(token.value, 1, '>=', location);
+            const cardCondition: CardCondition = {
+                kind: 'card',
+                cardName: token.value,
+                cardCount: 1,
+                operator: ConditionOperator.AT_LEAST,
+                location: location
+            };
+            return cardCondition;
         }
 
         if (token.type === 'paren') {
@@ -76,8 +90,8 @@ function parse(tokens: Token[]): BaseCondition {
                 }
                 current++;
 
-                if (expression instanceof AndCondition || expression instanceof OrCondition) {
-                    expression.hasParentheses = true;
+                if (expression.kind === 'logic') {
+                    expression.render.hasParentheses = true;
                 }
 
                 return expression;
@@ -90,19 +104,23 @@ function parse(tokens: Token[]): BaseCondition {
     }
 
     /** Parses expressions, handling AND and OR operations */
-    function parseExpression(): BaseCondition {
-        let left: BaseCondition = walk();
+    function parseExpression(): Condition {
+        let left: Condition = walk();
     
         while (current < tokens.length && tokens[current].type === 'operator') {
             const operator = tokens[current].value;
             current++;
-            const right: BaseCondition = walk();
+            const right: Condition = walk();
             // Create AndCondition or OrCondition based on the operator
-            if (operator === 'AND') {
-                left = new AndCondition([left, right]);
-            } else {
-                left = new OrCondition([left, right]);
-            }
+            left = {
+                kind: 'logic',
+                type: operator.toLowerCase() === 'and' ? ConditionType.AND : ConditionType.OR,
+                conditionA: left,
+                conditionB: right,
+                render: {
+                    hasParentheses: false
+                }
+            };
         }
     
         return left;
@@ -287,7 +305,7 @@ function tokenize(input: string): Token[] {
  * @param conditions - The condition string to parse
  * @returns A BaseCondition representing the parsed condition
  */
-export function parseCondition(conditions: string): BaseCondition {
+export function parseCondition(conditions: string): Condition {
     const tokens = tokenize(conditions);
     return parse(tokens);
 }

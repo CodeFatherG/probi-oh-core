@@ -1,9 +1,6 @@
 import yamlManager from '../src/yaml-manager';
-import { Deck } from '../src/deck';
-import { CreateCard } from '../src/card';
-import { Condition, AndCondition, OrCondition, BaseCondition } from '../src/condition';
 import * as yaml from 'js-yaml';
-import { CardDetails, SimulationInput } from "@probi-oh/types";
+import { CardDetails, Condition, ConditionLocation, ConditionOperator, ConditionType, LogicCondition, SimulationInput } from "@probi-oh/types";
 
 // Mock ProgressEvent
 class MockProgressEvent {
@@ -153,31 +150,82 @@ describe('YAML Manager', () => {
 
     describe('yamlManager.exportConditionsToString', () => {
         it('should correctly serialise conditions to YAML', async () => {
-            const conditions = [
-                new Condition('Card1', 2, '>='),
-                new OrCondition([
-                    new Condition('Card2', 1, '='),
-                    new Condition('Card1', 2, ">=")
-                ])
+            const conditions: Condition[] = [
+                {
+                    kind: 'card',
+                    cardName: 'Card1', 
+                    cardCount: 2, 
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                },
+                {
+                    kind: 'logic',
+                    type: ConditionType.OR,
+                    conditionA: {
+                        kind: 'card',
+                        cardName: 'Card2',
+                        cardCount: 1,
+                        operator: ConditionOperator.EXACTLY,
+                        location: ConditionLocation.HAND
+                    },
+                    conditionB: {
+                        kind: 'card',
+                        cardName: 'Card1',
+                        cardCount: 2,
+                        operator: ConditionOperator.AT_LEAST,
+                        location: ConditionLocation.HAND
+                    },
+                    render: {
+                        hasParentheses: false
+                    }
+                }
             ];
             const result = await yamlManager.exportConditionsToString(conditions);
             const parsed = yaml.load(result) as { conditions: string[] };
             expect(parsed.conditions).toHaveLength(2);
-            expect(parsed.conditions[0]).toBe('2+ Card1 IN Hand');
-            expect(parsed.conditions[1]).toBe('1 Card2 IN Hand OR 2+ Card1 IN Hand');
+            expect(parsed.conditions[0]).toBe('2+ Card1 IN HAND');
+            expect(parsed.conditions[1]).toBe('1 Card2 IN HAND OR 2+ Card1 IN HAND');
         });
 
         it('should correctly serialise complex conditions', async () => {
-            const condition = new AndCondition([
-                new Condition('Card1', 2, '>='),
-                new OrCondition([
-                    new Condition('Card2', 1, '='),
-                    new Condition('Card3', 3, '<='),
-                ], true),
-            ]);
+            const condition: LogicCondition = {
+                kind: 'logic',
+                type: ConditionType.AND,
+                conditionA: {
+                    kind: 'card',
+                    cardName: 'Card1',
+                    cardCount: 2,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                },
+                conditionB: {
+                    kind: 'logic',
+                    type: ConditionType.OR,
+                    conditionA: {
+                        kind: 'card',
+                        cardName: 'Card2',
+                        cardCount: 1,
+                        operator: ConditionOperator.EXACTLY,
+                        location: ConditionLocation.HAND
+                    },
+                    conditionB: {
+                        kind: 'card',
+                        cardName: 'Card3',
+                        cardCount: 3,
+                        operator: ConditionOperator.NO_MORE,
+                        location: ConditionLocation.HAND
+                    },
+                    render: {
+                        hasParentheses: true
+                    }
+                },
+                render: {
+                    hasParentheses: false
+                }
+            };
             const result = await yamlManager.exportConditionsToString([condition]);
             const parsed = yaml.load(result) as { conditions: string[] };
-            expect(parsed.conditions[0]).toBe('2+ Card1 IN Hand AND (1 Card2 IN Hand OR 3- Card3 IN Hand)');
+            expect(parsed.conditions[0]).toBe('2+ Card1 IN HAND AND (1 Card2 IN HAND OR 3- Card3 IN HAND)');
         });
     });
 

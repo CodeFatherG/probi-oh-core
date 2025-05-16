@@ -1,7 +1,7 @@
 import { MockGameState } from './mock/game-state.mock';
 import { MockDeck } from './mock/deck.mock';
 import { Card, CreateCard } from '../src/card';
-import { AndCondition, BaseCondition, Condition, evaluateCondition, OrCondition } from '../src/condition';
+import { evaluateCondition } from '../src/condition';
 import { parseCondition } from './../src/parser';
 
 describe('testers', () => {

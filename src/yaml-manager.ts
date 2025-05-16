@@ -1,7 +1,7 @@
 import yaml from 'js-yaml';
-import { BaseCondition } from './condition';
-import { CardDetails, SimulationInput } from "@probi-oh/types";
+import { CardDetails, Condition, SimulationInput } from "@probi-oh/types";
 import { DataFileManager } from './data-file';
+import { conditionToString } from './condition';
 
 class YamlManager implements DataFileManager {
     private static instance: YamlManager;
@@ -79,8 +79,8 @@ class YamlManager implements DataFileManager {
      * serialises conditions to YAML format
      * @param conditions - The conditions to serialise
      */
-    public async exportConditionsToString(conditions: BaseCondition[]): Promise<string> {
-        const conditionStrings = conditions.map(condition => condition.toString());
+    public async exportConditionsToString(conditions: Condition[]): Promise<string> {
+        const conditionStrings = conditions.map(condition => conditionToString(condition));
         return yaml.dump({ conditions: conditionStrings });
     }
 

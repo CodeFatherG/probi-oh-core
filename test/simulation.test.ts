@@ -1,9 +1,10 @@
 import { Simulation, SimulationBranch, runSimulation } from '../src/simulation';
 import { GameState } from '../src/game-state';
-import { BaseCondition, Condition, AndCondition, OrCondition, evaluateCondition } from '../src/condition';
+import { evaluateCondition } from '../src/condition';
 import { Card, CreateCard, FreeCard } from '../src/card';
 import { freeCardIsUsable, processFreeCard } from '../src/free-card-processor';
 import { Deck } from '../src/deck';
+import { Condition } from '@probi-oh/types';
 
 // Mock dependencies
 jest.mock('../src/game-state');
@@ -17,7 +18,7 @@ jest.mock('../src/deck');
 
 describe('Simulation', () => {
     let mockGameState: jest.Mocked<GameState>;
-    let mockCondition: jest.Mocked<BaseCondition>;
+    let mockCondition: jest.Mocked<Condition>;
     let mockDeck: jest.Mocked<Deck>;
     let mockHand: Card[] = [];
     let mockCardsPlayedThisTurn: Card[] = [];
@@ -26,11 +27,7 @@ describe('Simulation', () => {
         mockDeck = new Deck([]) as jest.Mocked<Deck>;
         mockGameState = new GameState(mockDeck) as jest.Mocked<GameState>;
         mockCondition = {
-            requiredCards: jest.fn(),
-            toString: jest.fn(),
-            recordSuccess: jest.fn(),
-            successes: 0
-        } as unknown as jest.Mocked<BaseCondition>;
+        } as unknown as jest.Mocked<Condition>;
         
         // Mock GameState properties and methods
         mockGameState.deepCopy.mockReturnValue(mockGameState);
@@ -142,7 +139,7 @@ describe('Simulation', () => {
 
 describe('SimulationBranch', () => {
     let mockGameState: jest.Mocked<GameState>;
-    let mockCondition: jest.Mocked<BaseCondition>;
+    let mockCondition: jest.Mocked<Condition>;
     let mockDeck: jest.Mocked<Deck>;
     let mockHand: Card[] = [];
     let mockCardsPlayedThisTurn: Card[] = [];
@@ -151,11 +148,7 @@ describe('SimulationBranch', () => {
         mockDeck = new Deck([]) as jest.Mocked<Deck>;
         mockGameState = new GameState(mockDeck) as jest.Mocked<GameState>;
         mockCondition = {
-            requiredCards: jest.fn(),
-            toString: jest.fn(),
-            recordSuccess: jest.fn(),
-            successes: 0
-        } as unknown as jest.Mocked<BaseCondition>;
+        } as unknown as jest.Mocked<Condition>;
         mockGameState.deepCopy.mockReturnValue(mockGameState);
         
         // Mock other properties
@@ -208,11 +201,7 @@ describe('runSimulation', () => {
         const mockDeck = new Deck([]) as jest.Mocked<Deck>;
         const mockGameState = new GameState(mockDeck) as jest.Mocked<GameState>;
         const mockCondition = {
-            requiredCards: jest.fn(),
-            toString: jest.fn(),
-            recordSuccess: jest.fn(),
-            successes: 0
-        } as unknown as jest.Mocked<BaseCondition>;
+        } as unknown as jest.Mocked<Condition>;
         mockGameState.deepCopy.mockReturnValue(mockGameState);
         
         // Mock other properties

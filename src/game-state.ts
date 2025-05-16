@@ -1,5 +1,5 @@
+import { FreeCardCost } from "@probi-oh/types";
 import { Card, CreateCard, FreeCard } from "./card";
-import { CostType } from "@probi-oh/types";
 import { Deck } from "./deck";
 
 /**
@@ -15,7 +15,7 @@ export interface excavationCb {(cards: Card[]): Card}
  * @param costType - The type of cost to pay
  * @returns The cards to pay the cost
  */
-export interface handCostCb {(hand: Card[], costType: CostType): Card[]}
+export interface handCostCb {(hand: Card[], costType: FreeCardCost): Card[]}
 
 /** Represents the current state of a game */
 export class GameState {

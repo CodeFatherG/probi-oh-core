@@ -1,4 +1,4 @@
-import { CardDetails, ConditionType, CostType, RestrictionType } from '@probi-oh/types'
+import { CardDetails, FreeCardCondition, FreeCardCost, FreeCardRestriction } from '@probi-oh/types'
 
 /**
  * Represents a card in the game.
@@ -83,17 +83,17 @@ class FreeCard extends Card
         return this.details.free!.oncePerTurn;
     }
 
-    get restrictions(): RestrictionType[]
+    get restrictions(): FreeCardRestriction[]
     {
         return this.details.free?.restriction || [];
     }
 
-    get cost(): {type: CostType, value: number | string[]} | null
+    get cost(): {type: FreeCardCost, value: number | string[]} | null
     {
         return this.details.free?.cost ?? null;
     }
 
-    get condition(): {type: ConditionType, value: number | string} | null
+    get condition(): {type: FreeCardCondition, value: number | string} | null
     {
         return this.details.free?.condition ?? null;
     }
@@ -107,7 +107,7 @@ class FreeCard extends Card
     {
         let count = this.count;
 
-        function costCount(cost: {type: CostType, value: number | string[]} | null): number {
+        function costCount(cost: {type: FreeCardCost, value: number | string[]} | null): number {
             if (typeof cost === "undefined" || cost === null) {
                 return 0;
             }
@@ -122,13 +122,13 @@ class FreeCard extends Card
         }
 
         switch (this.cost?.type) {
-            case CostType.BanishFromDeck:
+            case FreeCardCost.BanishFromDeck:
                 count += costCount(this.cost);
                 break;
 
-            case CostType.BanishFromHand:
-            case CostType.Discard:
-            case CostType.PayLife:
+            case FreeCardCost.BanishFromHand:
+            case FreeCardCost.Discard:
+            case FreeCardCost.PayLife:
                 break;
         
         }

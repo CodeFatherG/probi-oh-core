@@ -1,8 +1,8 @@
-import { CardStats, ConditionStats, SimulationOutput } from "@probi-oh/types";
+import { CardStats, Condition, ConditionStats, SimulationOutput } from "@probi-oh/types";
 import { GameState } from "./game-state";
 import { Simulation, SimulationBranch } from "./simulation";
 import { Card } from "./card";
-import { AndCondition, BaseCondition, OrCondition } from "./condition";
+import { conditionToString } from "./condition";
 
 function countCards(list: string[]): Map<string, number> {
     const counts = new Map<string, number>();
@@ -306,35 +306,37 @@ function processDiscardedCards(report: SimulationOutput, simulation: Simulation)
     });
 }
 
-function processConditionStats(report: SimulationOutput, condition: BaseCondition): void {
-    const processCondition = (stats: ConditionStats | undefined, condition: BaseCondition) => {
+function processConditionStats(report: SimulationOutput, condition: Condition): void {
+    const processCondition = (stats: ConditionStats | undefined, condition: Condition) => {
         if (stats === undefined) {
-            console.error(`Condition statistics not found for condition: ${condition.toString()}`);
+            console.error(`Condition statistics not found for condition: ${conditionToString(condition)}`);
             return;
         }
         
-        if (condition instanceof AndCondition || condition instanceof OrCondition) {
-            stats.subConditionStats = {};
-
-            for (const subCondition of condition.conditions) {
-                if (stats.subConditionStats[subCondition.toString()] === undefined) {
-                    stats.subConditionStats[subCondition.toString()] = {
-                        successCount: subCondition.successes,
+        if (condition.kind === 'logic') {
+            const evaluateCondition = (subCondition: Condition): void => {
+                stats.subConditionStats = stats.subConditionStats || {};
+                if (stats.subConditionStats[conditionToString(subCondition)] === undefined) {
+                    stats.subConditionStats[conditionToString(subCondition)] = {
+                        successCount: 0//subCondition.successes,
                     };
-                    processCondition(stats.subConditionStats[subCondition.toString()], subCondition);
+                    processCondition(stats.subConditionStats[conditionToString(subCondition)], subCondition);
                 }
             }
+
+            evaluateCondition(condition.conditionA);
+            evaluateCondition(condition.conditionB);
         }
     };
 
-    console.log(`Processing condition: ${condition.toString()}`);
+    console.log(`Processing condition: ${conditionToString(condition)}`);
 
-    report.conditionStats[condition.toString()] = {
-        successCount: condition.successes,
+    report.conditionStats[conditionToString(condition)] = {
+        successCount: 0//condition.successes,
     }
-    processCondition(report.conditionStats[condition.toString()], condition);
+    processCondition(report.conditionStats[conditionToString(condition)], condition);
 
-    console.log(report.conditionStats[condition.toString()]);
+    console.log(report.conditionStats[conditionToString(condition)]);
 }
 
 function processSimulations(simulations: Simulation[]): SimulationOutput {

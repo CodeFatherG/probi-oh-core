@@ -1,5 +1,5 @@
 import { Card, CreateCard, FreeCard } from '../src/card';
-import { CardDetails, CostType, ConditionType, RestrictionType } from "@probi-oh/types";
+import { CardDetails, FreeCardCost, ConditionType, FreeCardRestriction, FreeCardCondition } from "@probi-oh/types";
 
 describe('Card', () => {
     const cardName = 'Blue-Eyes White Dragon';
@@ -58,14 +58,14 @@ describe('FreeCard', () => {
             count: 2,
             oncePerTurn: true,
             cost: {
-                type: CostType.Discard,
+                type: FreeCardCost.Discard,
                 value: 1
             },
             condition: {
-                type: ConditionType.Discard,
+                type: FreeCardCondition.Discard,
                 value: 1
             },
-            restriction: [RestrictionType.NoMoreDraws],
+            restriction: [FreeCardRestriction.NoMoreDraws],
             excavate: {
                 count: 3,
                 pick: 1
@@ -95,13 +95,13 @@ describe('FreeCard', () => {
 
     it('should return the correct restrictions', () => {
         const card = CreateCard(cardName, freeCardDetails) as FreeCard;
-        expect(card.restrictions).toEqual([RestrictionType.NoMoreDraws]);
+        expect(card.restrictions).toEqual([FreeCardRestriction.NoMoreDraws]);
     });
 
     it('should return the correct cost', () => {
         const card = CreateCard(cardName, freeCardDetails) as FreeCard;
         expect(card.cost).toEqual({
-            type: CostType.Discard,
+            type: FreeCardCost.Discard,
             value: 1
         });
     });
@@ -109,7 +109,7 @@ describe('FreeCard', () => {
     it('should return the correct condition', () => {
         const card = CreateCard(cardName, freeCardDetails) as FreeCard;
         expect(card.condition).toEqual({
-            type: ConditionType.Discard,
+            type: FreeCardCondition.Discard,
             value: 1
         });
     });

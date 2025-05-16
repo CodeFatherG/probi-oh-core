@@ -1,13 +1,14 @@
+import { Condition } from "@probi-oh/types";
 import { FreeCard } from "./card";
-import { BaseCondition, evaluateCondition } from "./condition";
 import { freeCardIsUsable, processFreeCard } from "./free-card-processor";
 import { GameState } from "./game-state";
+import { evaluateCondition } from "./condition";
 
 export class SimulationBranch {
     private readonly _gameState: GameState;
     private _result: boolean;
 
-    constructor(gameState: GameState, readonly _condition: BaseCondition) {
+    constructor(gameState: GameState, readonly _condition: Condition) {
         this._gameState = gameState.deepCopy();
         this._result = false;
     }
@@ -20,7 +21,7 @@ export class SimulationBranch {
         return this._result; 
     }
 
-    get condition(): Readonly<BaseCondition> {
+    get condition(): Readonly<Condition> {
         return this._condition;
     }
 
@@ -33,14 +34,14 @@ export class SimulationBranch {
 /** Represents a single simulation run */
 export class Simulation {
     private readonly _gameState: GameState;
-    private _branches: Map<BaseCondition, SimulationBranch[]> = new Map();
+    private _branches: Map<Condition, SimulationBranch[]> = new Map();
 
     /**
      * Creates a new Simulation
      * @param gameState - The initial game state
      * @param _condition - The condition to evaluate
      */
-    public constructor(gameState: GameState, readonly _conditions: BaseCondition[]) {
+    public constructor(gameState: GameState, readonly _conditions: Condition[]) {
         this._gameState = gameState.deepCopy();
     }
 
@@ -68,7 +69,7 @@ export class Simulation {
         });
     }
 
-    private generateFreeCardPermutations(gameState: GameState, condition: BaseCondition, usedCards: FreeCard[] = []): void {
+    private generateFreeCardPermutations(gameState: GameState, condition: Condition, usedCards: FreeCard[] = []): void {
         const freeCards = gameState.freeCardsInHand.filter(card => 
             freeCardIsUsable(gameState, card) && !usedCards.includes(card)
         );
@@ -101,7 +102,7 @@ export class Simulation {
     }
 
     /** Gets the conditions being evaluated */
-    public get conditions(): BaseCondition[] {
+    public get conditions(): Condition[] {
         return this._conditions;
     }
 
@@ -111,22 +112,22 @@ export class Simulation {
     }
 
     /** Gets the branches of the simulation */
-    public get branches(): Map<BaseCondition, SimulationBranch[]> {
+    public get branches(): Map<Condition, SimulationBranch[]> {
         return this._branches;
     }
 
     /** Get the branch that succeeded */
-    public get successfulBranches(): [BaseCondition, SimulationBranch | undefined][] {
-        return Array.from(this._branches).map(([condition, branches]) => [condition, branches.find(branch => branch.result)]) as [BaseCondition, SimulationBranch | undefined][];
+    public get successfulBranches(): [Condition, SimulationBranch | undefined][] {
+        return Array.from(this._branches).map(([condition, branches]) => [condition, branches.find(branch => branch.result)]) as [Condition, SimulationBranch | undefined][];
     }
 
     /** Get the branches that failed */
-    public get failedBranches(): [BaseCondition, SimulationBranch[] | undefined][] {
-        return Array.from(this._branches).map(([condition, branches]) => [condition, branches.find(branch => !branch.result)]) as [BaseCondition, SimulationBranch[] | undefined][];
+    public get failedBranches(): [Condition, SimulationBranch[] | undefined][] {
+        return Array.from(this._branches).map(([condition, branches]) => [condition, branches.find(branch => !branch.result)]) as [Condition, SimulationBranch[] | undefined][];
     }
 }
 
-export function runSimulation(gameState: GameState, conditions: BaseCondition[]): Simulation {
+export function runSimulation(gameState: GameState, conditions: Condition[]): Simulation {
     const simulation = new Simulation(gameState, conditions);
     simulation.iterate();
     return simulation;

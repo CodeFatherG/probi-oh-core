@@ -1,8 +1,8 @@
 import { Card, FreeCard } from "./card";
-import { ConditionType, CostType, RestrictionType } from "@probi-oh/types";
+import { Condition, ConditionType, FreeCardCondition, FreeCardCost, FreeCardRestriction } from "@probi-oh/types";
 import { SimulationBranch } from "./simulation";
 import { GameState } from './game-state';
-import { BaseCondition, cardsThatSatisfy, Condition, matchCards } from "./condition";
+import { cardsThatSatisfy, matchCards } from "./condition";
 
 function cardCanPayCost(gameState: GameState, card: FreeCard): boolean {
     if (!card.cost) {
@@ -13,7 +13,7 @@ function cardCanPayCost(gameState: GameState, card: FreeCard): boolean {
 
     switch (card.cost.type)
     {
-        case CostType.BanishFromDeck:
+        case FreeCardCost.BanishFromDeck:
             if (typeof(card.cost.value) === "number") {
                 if (gameState.deck.deckCount < (card.cost.value as number)) {
                     return false;
@@ -24,7 +24,7 @@ function cardCanPayCost(gameState: GameState, card: FreeCard): boolean {
             
             break;
 
-        case CostType.BanishFromHand:
+        case FreeCardCost.BanishFromHand:
             if (typeof(card.cost.value) === "number") {
                 if (handLessCard.length < (card.cost.value as number))
                 {
@@ -39,7 +39,7 @@ function cardCanPayCost(gameState: GameState, card: FreeCard): boolean {
             }
             break;
 
-        case CostType.Discard:
+        case FreeCardCost.Discard:
             if (typeof(card.cost.value) === "number") {
                 if (handLessCard.length < (card.cost.value as number)) {
                     return false;
@@ -53,7 +53,7 @@ function cardCanPayCost(gameState: GameState, card: FreeCard): boolean {
             }
             break;
 
-        case CostType.PayLife:
+        case FreeCardCost.PayLife:
             // We don't care about life points
             break;
     }
@@ -68,15 +68,15 @@ function checkCardRestrictions(gameState: GameState, card: FreeCard): boolean {
         {
             switch (restriction)
             {
-                case RestrictionType.NoSpecialSummon:
+                case FreeCardRestriction.NoSpecialSummon:
                     // We don't care... yet
                     break;
 
-                case RestrictionType.NoMoreDraws:
+                case FreeCardRestriction.NoMoreDraws:
                     // gameState is not something we care about
                     break;
 
-                case RestrictionType.NoPreviousDraws:
+                case FreeCardRestriction.NoPreviousDraws:
                     // If we have already used any free cards, then we can't use gameState card
                     if (gameState.freeCardsPlayedThisTurn.length > 0)
                     {
@@ -104,7 +104,7 @@ export function freeCardIsUsable(gameState: GameState, card: FreeCard): boolean 
     }
 
     // Check if any cards already impose the no more cards restriction
-    if (gameState.freeCardsPlayedThisTurn.some(usedCard => usedCard.restrictions?.includes(RestrictionType.NoMoreDraws)))
+    if (gameState.freeCardsPlayedThisTurn.some(usedCard => usedCard.restrictions?.includes(FreeCardRestriction.NoMoreDraws)))
     {
         return false;
     }
@@ -129,7 +129,7 @@ function countCardSatisfactions(card: Card, satisfiedConditions: Map<Condition, 
         .length;
 }
 
-function satisfactoryCardPriority(condition: BaseCondition, list: Card[]): Card[] {
+function satisfactoryCardPriority(condition: Condition, list: Card[]): Card[] {
     const satisfiedConditions = cardsThatSatisfy(condition, list);
     
     return [...list].sort((a, b) => {
@@ -139,7 +139,7 @@ function satisfactoryCardPriority(condition: BaseCondition, list: Card[]): Card[
     });
 }
 
-function payCost(gameState: GameState, card: FreeCard, condition: BaseCondition): void {
+function payCost(gameState: GameState, card: FreeCard, condition: Condition): void {
     if (!card.cost) {
         return;
     }
@@ -147,12 +147,12 @@ function payCost(gameState: GameState, card: FreeCard, condition: BaseCondition)
     const prioritizedCards = satisfactoryCardPriority(condition, gameState.hand).reverse();
 
     switch (card.cost.type) {
-        case CostType.BanishFromDeck:
+        case FreeCardCost.BanishFromDeck:
             gameState.banishFromDeck([...Array(card.cost.value as number)].map(() => gameState.deck.drawCard()));
             break;
 
-        case CostType.BanishFromHand:
-        case CostType.Discard:
+        case FreeCardCost.BanishFromHand:
+        case FreeCardCost.Discard:
         {
             let cardsToRemove: Card[] = [];
 
@@ -171,7 +171,7 @@ function payCost(gameState: GameState, card: FreeCard, condition: BaseCondition)
                 }
             }
 
-            if (card.cost.type === CostType.BanishFromHand) {
+            if (card.cost.type === FreeCardCost.BanishFromHand) {
                 gameState.banishFromHand(cardsToRemove);
             } else {
                 gameState.discardFromHand(cardsToRemove);
@@ -179,13 +179,13 @@ function payCost(gameState: GameState, card: FreeCard, condition: BaseCondition)
         }
             break;
 
-        case CostType.PayLife:
+        case FreeCardCost.PayLife:
             // We don't care about life points
             break;
     }
 }
 
-export function excavate(gameState: GameState, card: FreeCard, condition: BaseCondition): void {
+export function excavate(gameState: GameState, card: FreeCard, condition: Condition): void {
     if (!card.excavate) {
         return;
     }
@@ -202,7 +202,7 @@ export function excavate(gameState: GameState, card: FreeCard, condition: BaseCo
     gameState.deck.addToBottom(prioritizedCards.slice(pick));
 }
 
-function payPostConditions(gameState: GameState, card: FreeCard, condition: BaseCondition): boolean {
+function payPostConditions(gameState: GameState, card: FreeCard, condition: Condition): boolean {
     if (!card.condition) {
         return true;
     }
@@ -210,12 +210,12 @@ function payPostConditions(gameState: GameState, card: FreeCard, condition: Base
     const ascendingCards = satisfactoryCardPriority(condition, gameState.hand).reverse();
 
     switch (card.condition.type) {
-        case ConditionType.BanishFromDeck:
+        case FreeCardCondition.BanishFromDeck:
             gameState.banishFromDeck([...Array(card.condition.value as number)].map(() => gameState.deck.drawCard()));
             break;
 
-        case ConditionType.Discard:
-        case ConditionType.BanishFromHand:
+        case FreeCardCondition.Discard:
+        case FreeCardCondition.BanishFromHand:
             {
                 let cardsToRemove: Card[] = [];
     
@@ -234,7 +234,7 @@ function payPostConditions(gameState: GameState, card: FreeCard, condition: Base
                     cardsToRemove = matchingCards.slice(0, 1);
                 }
     
-                if (card.condition.type === ConditionType.BanishFromHand) {
+                if (card.condition.type === FreeCardCondition.BanishFromHand) {
                     gameState.banishFromHand(cardsToRemove);
                 } else {
                     gameState.discardFromHand(cardsToRemove);
@@ -246,7 +246,7 @@ function payPostConditions(gameState: GameState, card: FreeCard, condition: Base
     return true;
 }
 
-function handleFreeCard(gameState: GameState, card: FreeCard, condition: BaseCondition): void {
+function handleFreeCard(gameState: GameState, card: FreeCard, condition: Condition): void {
     if (!gameState.hand.includes(card)) {
         console.error("Card is not in the player's hand");
         return;
