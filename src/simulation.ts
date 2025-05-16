@@ -2,15 +2,18 @@ import { Condition } from "@probi-oh/types";
 import { FreeCard } from "./card";
 import { freeCardIsUsable, processFreeCard } from "./free-card-processor";
 import { GameState } from "./game-state";
-import { evaluateCondition } from "./condition";
+import { evaluateCondition, EvaluationResult } from "./condition";
 
 export class SimulationBranch {
     private readonly _gameState: GameState;
-    private _result: boolean;
+    private _result: EvaluationResult;
 
     constructor(gameState: GameState, readonly _condition: Condition) {
         this._gameState = gameState.deepCopy();
-        this._result = false;
+        this._result = {
+            success: false,
+            successfulConditions: [],
+        };
     }
 
     run(): void {
@@ -18,7 +21,11 @@ export class SimulationBranch {
     }
 
     get result(): boolean {
-        return this._result; 
+        return this._result.success; 
+    }
+
+    get successfulConditions(): Condition[] {
+        return this._result.successfulConditions;
     }
 
     get condition(): Readonly<Condition> {
@@ -124,6 +131,18 @@ export class Simulation {
     /** Get the branches that failed */
     public get failedBranches(): [Condition, SimulationBranch[] | undefined][] {
         return Array.from(this._branches).map(([condition, branches]) => [condition, branches.find(branch => !branch.result)]) as [Condition, SimulationBranch[] | undefined][];
+    }
+
+    public conditionSuccesses(condition: Condition): Map<Condition, number> {
+        const successfulConditions = new Map<Condition, number>();
+        this.branches.get(condition)?.forEach(branch => {
+            const conditionsThatSucceeded = branch.successfulConditions;
+            conditionsThatSucceeded.forEach(cond => {
+                successfulConditions.set(cond, (successfulConditions.get(cond) || 0) + 1);
+            });
+        });
+
+        return successfulConditions;
     }
 }
 

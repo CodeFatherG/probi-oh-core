@@ -306,37 +306,50 @@ function processDiscardedCards(report: SimulationOutput, simulation: Simulation)
     });
 }
 
-function processConditionStats(report: SimulationOutput, condition: Condition): void {
-    const processCondition = (stats: ConditionStats | undefined, condition: Condition) => {
+function processConditionStats(report: SimulationOutput, simulation: Simulation): void {
+    const processCondition = (simulation: Simulation, stats: ConditionStats, condition: Condition) => {
         if (stats === undefined) {
             console.error(`Condition statistics not found for condition: ${conditionToString(condition)}`);
             return;
         }
         
         if (condition.kind === 'logic') {
-            const evaluateCondition = (subCondition: Condition): void => {
+            const evaluateCondition = (simulation: Simulation, subCondition: Condition): void => {
                 stats.subConditionStats = stats.subConditionStats || {};
                 if (stats.subConditionStats[conditionToString(subCondition)] === undefined) {
                     stats.subConditionStats[conditionToString(subCondition)] = {
-                        successCount: 0//subCondition.successes,
+                        successCount: 0
                     };
-                    processCondition(stats.subConditionStats[conditionToString(subCondition)], subCondition);
                 }
+
+                if (simulation.conditionSuccesses(subCondition).get(subCondition)) {
+                    stats.subConditionStats[conditionToString(subCondition)].successCount = (stats.subConditionStats[conditionToString(subCondition)].successCount || 0) + (simulation.conditionSuccesses(subCondition).get(subCondition) || 0);
+                }
+
+                processCondition(simulation, stats.subConditionStats[conditionToString(subCondition)], subCondition);
             }
 
-            evaluateCondition(condition.conditionA);
-            evaluateCondition(condition.conditionB);
+            evaluateCondition(simulation, condition.conditionA);
+            evaluateCondition(simulation, condition.conditionB);
         }
     };
 
-    console.log(`Processing condition: ${conditionToString(condition)}`);
+    simulation.conditions.forEach(condition => {
+        const conditionString = conditionToString(condition);
+        if (report.conditionStats[conditionString] === undefined) {
+            report.conditionStats[conditionString] = {
+                successCount: 0
+            };
+        }
 
-    report.conditionStats[conditionToString(condition)] = {
-        successCount: 0//condition.successes,
-    }
-    processCondition(report.conditionStats[conditionToString(condition)], condition);
+        if (simulation.conditionSuccesses(condition).get(condition)) {
+            report.conditionStats[conditionString].successCount = (report.conditionStats[conditionString].successCount || 0) + (simulation.conditionSuccesses(condition).get(condition) || 0);
+        }
 
-    console.log(report.conditionStats[conditionToString(condition)]);
+        processCondition(simulation, report.conditionStats[conditionToString(condition)], condition);
+
+        console.log(report.conditionStats[conditionToString(condition)]);
+    });
 }
 
 function processSimulations(simulations: Simulation[]): SimulationOutput {
@@ -358,11 +371,8 @@ function processSimulations(simulations: Simulation[]): SimulationOutput {
         // Check game state statistics
         processBanishedCards(report, simulation);
         processDiscardedCards(report, simulation);
-    }
 
-    // Process condition statistics. Condition objects are constant so we can use the first simulation
-    if (simulations.length > 0) {
-        simulations[0].conditions.forEach(condition => processConditionStats(report, condition));
+        processConditionStats(report, simulation)
     }
 
     return report;

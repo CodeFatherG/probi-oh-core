@@ -81,7 +81,10 @@ describe('Simulation', () => {
     });
 
     test('iterate runs a single branch when condition is met', () => {
-        (evaluateCondition as jest.Mock).mockReturnValue(true);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: true,
+            successfulConditions: [mockCondition],
+        });
         const simulation = new Simulation(mockGameState, [mockCondition]);
         simulation.iterate();
         expect(simulation.result).toBe(true);
@@ -90,7 +93,10 @@ describe('Simulation', () => {
     });
 
     test('iterate generates free card permutations when condition is not met', () => {
-        (evaluateCondition as jest.Mock).mockReturnValue(false);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: false,
+            successfulConditions: [],
+        });
         const mockFreeCard1 = CreateCard('FreeCard1', { free: { oncePerTurn: false } }) as FreeCard;
         const mockFreeCard2 = CreateCard('FreeCard2', { free: { oncePerTurn: false } }) as FreeCard;
         mockHand = [mockFreeCard1, mockFreeCard2];
@@ -106,8 +112,14 @@ describe('Simulation', () => {
 
     test('successfulBranch returns the first successful branch', () => {
         (evaluateCondition as jest.Mock)
-            .mockReturnValueOnce(false)
-            .mockReturnValueOnce(true);
+            .mockReturnValueOnce({
+                success: false,
+                successfulConditions: [],
+            })
+            .mockReturnValueOnce({
+                success: true,
+                successfulConditions: [mockCondition],
+            });
         const mockFreeCard = CreateCard('FreeCard', { free: { oncePerTurn: false } }) as FreeCard;
         mockHand = [mockFreeCard];
         // Update the mock getters
@@ -119,22 +131,6 @@ describe('Simulation', () => {
         expect(simulation.successfulBranches[0][1]).toBeDefined();
         expect(simulation.successfulBranches[0][1]?.result).toBe(true);
     });
-
-    // test('failedBranches returns all failed branches', () => {
-    //     (evaluateCondition as jest.Mock).mockReturnValue(false);
-    //     const mockFreeCard = CreateCard('FreeCard', { free: { oncePerTurn: false } }) as FreeCard;
-    //     mockHand = [mockFreeCard];
-    //     // Update the mock getters
-    //     (freeCardIsUsable as jest.Mock).mockReturnValue(true);
-
-    //     const simulation = new Simulation(mockGameState, [mockCondition]);
-    //     simulation.iterate();
-
-    //     expect(simulation.failedBranches.length).toBe(1);
-    //     expect(simulation.failedBranches[0][0]).toBe(mockCondition);
-    //     expect(Array.isArray(simulation.failedBranches[0][1])).toBe(true);
-    //     expect(simulation.failedBranches[0][1]?.every(branch => !branch.result)).toBe(true);
-    // });
 });
 
 describe('SimulationBranch', () => {
@@ -185,7 +181,10 @@ describe('SimulationBranch', () => {
     });
 
     test('run evaluates condition and updates result', () => {
-        (evaluateCondition as jest.Mock).mockReturnValue(true);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: true,
+            successfulConditions: [mockCondition],
+        });
         const branch = new SimulationBranch(mockGameState, mockCondition);
         branch.run();
         expect(branch.result).toBe(true);
@@ -227,7 +226,10 @@ describe('runSimulation', () => {
         });
 
         // Mock evaluateCondition function
-        (evaluateCondition as jest.Mock).mockReturnValue(true);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: true,
+            successfulConditions: [mockCondition],
+        });
 
         const result = runSimulation(mockGameState, [mockCondition]);
 

@@ -43,8 +43,9 @@ describe('Condition', () => {
             location: ConditionLocation.HAND,
             operator: ConditionOperator.EXACTLY,
         }
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(condition.successes).toBe(1);
+        const result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(condition);
     });
 
     test('should evaluate correctly for tag', () => {
@@ -55,8 +56,9 @@ describe('Condition', () => {
             location: ConditionLocation.HAND,
             operator: ConditionOperator.EXACTLY,
         }
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(condition.successes).toBe(1);
+        const result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(condition);
     });
 
     test('should evaluate correctly with quantity', () => {
@@ -67,11 +69,12 @@ describe('Condition', () => {
             operator: ConditionOperator.AT_LEAST,
             location: ConditionLocation.HAND,
         };
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(condition.successes).toBe(1);
+        const result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(condition);
     });
 
-    test('should evaluate correctly with different operators', () => {
+    test('should evaluate correctly for exactly operator', () => {
         const equalCondition: CardCondition = {
             kind: 'card',
             cardName: 'Tag1', 
@@ -79,18 +82,34 @@ describe('Condition', () => {
             operator: ConditionOperator.EXACTLY,
             location: ConditionLocation.HAND,
         };
-        expect(evaluateCondition(equalCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+        const result = evaluateCondition(equalCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+    });
 
-        const lessEqualCondition: CardCondition = {
+    test('should evaluate correctly for at least operator', () => {
+        const equalCondition: CardCondition = {
             kind: 'card',
-            cardName: 'Tag3', 
-            cardCount: 1, 
+            cardName: 'Tag1', 
+            cardCount: 2, 
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,
+        };
+        const result = evaluateCondition(equalCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+    });
+    
+    test('should evaluate correctly for no more operator', () => {
+        const equalCondition: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1', 
+            cardCount: 2, 
             operator: ConditionOperator.NO_MORE,
             location: ConditionLocation.HAND,
         };
-        expect(evaluateCondition(lessEqualCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+        const result = evaluateCondition(equalCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
     });
-    
+
     test('should evaluate correctly with quantity and <= operator', () => {
         const condition: CardCondition = {
             kind: 'card',
@@ -105,8 +124,9 @@ describe('Condition', () => {
             CreateCard('Card C', { tags: ['Tag1'] }),
         ];
         
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
-        // expect(condition.successes).toBe(0);
+        const result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
+        expect(result.successfulConditions).not.toContain(condition);
     });
 
     test('should evaluate correctly with exact quantity', () => {
@@ -121,8 +141,9 @@ describe('Condition', () => {
             CreateCard('Card A', { tags: ['Tag2'] }),
             CreateCard('Card B', { tags: ['Tag2'] }),
         ];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(condition.successes).toBe(1);
+        const result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(condition);
     });
 
     test('should handle cards with multiple tags', () => {
@@ -138,8 +159,9 @@ describe('Condition', () => {
             CreateCard('Card B', { tags: ['Tag2', 'Tag3'] }),
             CreateCard('Card C', { tags: ['Tag3', 'Tag4'] }),
         ];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(condition.successes).toBe(1);
+        const result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(condition);
     });
 
     it('should evaluate greater than or equal correctly', () => {
@@ -151,9 +173,11 @@ describe('Condition', () => {
             location: ConditionLocation.HAND,
         };
         testCards = [CreateCard('Test Card', {}), CreateCard('Test Card', {})];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+        let result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
         testCards = [CreateCard('Test Card', {})];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
+        result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
     });
 
     it('should evaluate less than or equal correctly', () => {
@@ -165,9 +189,11 @@ describe('Condition', () => {
             location: ConditionLocation.HAND,
         };
         testCards = [CreateCard('Test Card', {})];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+        let result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
         testCards = [CreateCard('Test Card', {}), CreateCard('Test Card', {}), CreateCard('Test Card', {})];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
+        result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
     });
 
     it('should evaluate equal correctly', () => {
@@ -179,11 +205,14 @@ describe('Condition', () => {
             location: ConditionLocation.HAND,
         };
         testCards = [CreateCard('Test Card', {}), CreateCard('Test Card', {})];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+        let result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
         testCards = [CreateCard('Test Card', {})];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
+        result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
         testCards = [CreateCard('Test Card', {}), CreateCard('Test Card', {}), CreateCard('Test Card', {})];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
+        result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
     });
 
     it('should handle card tags', () => {
@@ -195,9 +224,11 @@ describe('Condition', () => {
             location: ConditionLocation.HAND,
         };
         testCards = [CreateCard('Different Card', { tags: ['TestTag'] })];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+        let result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
         testCards = [CreateCard('Different Card', { tags: ['OtherTag'] })];
-        expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
+        result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
     });
 
     describe('Location targets', () => {
@@ -210,9 +241,11 @@ describe('Condition', () => {
                 location: ConditionLocation.DECK,
             };
             testDeck = [CreateCard('Test Card', {})];
-            expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+            let result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+            expect(result.success).toBe(true);
             testDeck = [CreateCard('Different Card', {})];
-            expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
+            result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+            expect(result.success).toBe(false);
         });
 
         it ('should evaluate correctly for hand', () => {
@@ -224,9 +257,11 @@ describe('Condition', () => {
                 location: ConditionLocation.HAND,
             };
             testCards = [CreateCard('Test Card', {})];
-            expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
+            let result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+            expect(result.success).toBe(true);
             testCards = [CreateCard('Different Card', {})];
-            expect(evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
+            result = evaluateCondition(condition, mockGameState.hand, mockGameState.deck.deckList);
+            expect(result.success).toBe(false);
         });
     });
 });
@@ -286,8 +321,9 @@ describe('AndCondition', () => {
         CreateCard('Card B', { tags: ['Tag2'] }),
         ];
 
-        expect(evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(andCondition.successes).toBe(1);
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(andCondition);
     });
 
     test('should fail if one condition fails', () => {
@@ -320,8 +356,9 @@ describe('AndCondition', () => {
         CreateCard('Card B', { tags: ['Tag2'] }),
         ];
 
-        expect(evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
-        // expect(andCondition.successes).toBe(0);
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
+        expect(result.successfulConditions).not.toContain(andCondition);
     });
 
     test('should evaluate correctly with multiple conditions', () => {
@@ -355,8 +392,9 @@ describe('AndCondition', () => {
             CreateCard('Card C', { tags: ['Tag3'] }),
         ];
 
-        expect(evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(andCondition.successes).toBe(1);
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(andCondition);
     });
 
     test('should fail if any condition fails', () => {
@@ -389,8 +427,9 @@ describe('AndCondition', () => {
             CreateCard('Card B', { tags: ['Tag1', 'Tag2'] }),
         ];
 
-        expect(evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
-        // expect(andCondition.successes).toBe(0);
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
+        expect(result.successfulConditions).not.toContain(andCondition);
     });
 
     test('should fail when a single card fulfills multiple conditions', () => {
@@ -421,10 +460,11 @@ describe('AndCondition', () => {
             CreateCard('Multi-Tag Card', { tags: ['Tag1', 'Tag2'] })
         ];
     
-        expect(evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
-        // expect(andCondition.successes).toBe(0);
-        // expect(condition1.successes).toBe(1);
-        // expect(condition2.successes).toBe(0);
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
+        expect(result.successfulConditions).not.toContain(andCondition);
+        expect(result.successfulConditions).toContain(condition1);
+        expect(result.successfulConditions).not.toContain(condition2);
     });
     
     test('should handle satisfying the condition non linearly', () => {
@@ -458,8 +498,9 @@ describe('AndCondition', () => {
             CreateCard('Another Card 1', { tags: ['Tag1'] }),
         ];
     
-        expect(evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(andCondition.successes).toBe(1);
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(andCondition);
     });
     
     test('should pass when different cards fulfill each condition', () => {
@@ -492,8 +533,83 @@ describe('AndCondition', () => {
             CreateCard('Card B', { tags: ['Tag2'] })
         ];
     
-        expect(evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(andCondition.successes).toBe(1);
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(andCondition);
+    });
+
+    test('should pass for repeated condition', () => {
+        const condition1: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const condition2: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const andCondition: LogicCondition = {
+            kind: 'logic',
+            type: ConditionType.AND,
+            conditionA: condition1,
+            conditionB: condition2,
+            render: {
+                hasParentheses: false,
+            }
+        };
+    
+        testCards = [
+            CreateCard('Card A', { tags: ['Tag1'] }),
+            CreateCard('Card B', { tags: ['Tag1'] })
+        ];
+    
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(andCondition);
+        expect(result.successfulConditions).toContain(condition1);
+        expect(result.successfulConditions).toContain(condition2);
+    });
+
+    test('should fail for repeated condition where only one passes', () => {
+        const condition1: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const condition2: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const andCondition: LogicCondition = {
+            kind: 'logic',
+            type: ConditionType.AND,
+            conditionA: condition1,
+            conditionB: condition2,
+            render: {
+                hasParentheses: false,
+            }
+        };
+    
+        testCards = [
+            CreateCard('Card A', { tags: ['Tag1'] }),
+            CreateCard('Card B', { tags: ['Tag2'] })
+        ];
+    
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
+        expect(result.successfulConditions).not.toContain(andCondition);
+        expect(result.successfulConditions).toContain(condition1);
+        expect(result.successfulConditions).not.toContain(condition2);
     });
 });
 
@@ -552,8 +668,9 @@ describe('OrCondition', () => {
         CreateCard('Card B', { tags: ['Tag2'] }),
         ];
 
-        expect(evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(orCondition.successes).toBe(1);
+        const result = evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(orCondition);
     });
 
     test('should fail if all conditions fail', () => {
@@ -586,8 +703,9 @@ describe('OrCondition', () => {
         CreateCard('Card B', { tags: ['Tag2'] }),
         ];
 
-        expect(evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
-        // expect(orCondition.successes).toBe(0);
+        const result = evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(false);
+        expect(result.successfulConditions).not.toContain(orCondition);
     });
 
     test('should evaluate correctly with multiple conditions', () => {
@@ -620,8 +738,9 @@ describe('OrCondition', () => {
             CreateCard('Card B', { tags: ['Tag2'] }),
         ];
 
-        expect(evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(orCondition.successes).toBe(1);
+        const result = evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(orCondition);
     });
 
     test('should pass if any condition passes', () => {
@@ -655,8 +774,83 @@ describe('OrCondition', () => {
             CreateCard('Card C', { tags: ['Tag3'] }),
         ];
 
-        expect(evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-        // expect(orCondition.successes).toBe(1);
+        const result = evaluateCondition(orCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(orCondition);
+    });
+
+    test('should pass for repeated condition', () => {
+        const condition1: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const condition2: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const andCondition: LogicCondition = {
+            kind: 'logic',
+            type: ConditionType.OR,
+            conditionA: condition1,
+            conditionB: condition2,
+            render: {
+                hasParentheses: false,
+            }
+        };
+    
+        testCards = [
+            CreateCard('Card A', { tags: ['Tag1'] }),
+            CreateCard('Card B', { tags: ['Tag1'] })
+        ];
+    
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(andCondition);
+        expect(result.successfulConditions).toContain(condition1);
+        expect(result.successfulConditions).toContain(condition2);
+    });
+
+    test('should PASS for repeated condition where both are satisfied by one card', () => {
+        const condition1: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const condition2: CardCondition = {
+            kind: 'card',
+            cardName: 'Tag1',
+            cardCount: 1,
+            operator: ConditionOperator.AT_LEAST,
+            location: ConditionLocation.HAND,    
+        };
+        const andCondition: LogicCondition = {
+            kind: 'logic',
+            type: ConditionType.OR,
+            conditionA: condition1,
+            conditionB: condition2,
+            render: {
+                hasParentheses: false,
+            }
+        };
+    
+        testCards = [
+            CreateCard('Card A', { tags: ['Tag1'] }),
+            CreateCard('Card B', { tags: ['Tag2'] })
+        ];
+    
+        const result = evaluateCondition(andCondition, mockGameState.hand, mockGameState.deck.deckList);
+        expect(result.success).toBe(true);
+        expect(result.successfulConditions).toContain(andCondition);
+        expect(result.successfulConditions).toContain(condition1);
+        expect(result.successfulConditions).toContain(condition2);
     });
 });
 
@@ -743,8 +937,9 @@ describe('Complex nested conditions', () => {
                 CreateCard('Card E', { tags: ['Tag1'] }),
             ];
     
-            expect(evaluateCondition(complexCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-            // expect(complexCondition.successes).toBe(1);
+            const result = evaluateCondition(complexCondition, mockGameState.hand, mockGameState.deck.deckList);
+            expect(result.success).toBe(true);
+            expect(result.successfulConditions).toContain(complexCondition);
         });
 
         test('OR with AND', () => {
@@ -806,8 +1001,9 @@ describe('Complex nested conditions', () => {
                 CreateCard('Card E', { tags: ['Tag1'] }),
             ];
     
-            expect(evaluateCondition(complexCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(true);
-            // expect(complexCondition.successes).toBe(1);
+            const result = evaluateCondition(complexCondition, mockGameState.hand, mockGameState.deck.deckList);
+            expect(result.success).toBe(true);
+            expect(result.successfulConditions).toContain(complexCondition);
         });
 
         test('OR with AND', () => {
@@ -866,8 +1062,9 @@ describe('Complex nested conditions', () => {
                 CreateCard('Card E', { tags: ['Tag1'] }),
             ];
     
-            expect(evaluateCondition(complexCondition, mockGameState.hand, mockGameState.deck.deckList)).toBe(false);
-            // expect(complexCondition.successes).toBe(0);
+            const result = evaluateCondition(complexCondition, mockGameState.hand, mockGameState.deck.deckList);
+            expect(result.success).toBe(false);
+            expect(result.successfulConditions).not.toContain(complexCondition);
         });
     });
 });

@@ -38,6 +38,7 @@ function generateHandPermutations(hand: Card[]): Card[][] {
 interface Result {
     success: boolean;
     usedCards: Card[];
+    succeededConditions: Condition[];
 }
 
 function evaluateSimpleCondition(condition: CardCondition, 
@@ -82,7 +83,8 @@ function evaluateSimpleCondition(condition: CardCondition,
 
         return {
             success: result,
-            usedCards: usedCards
+            usedCards: usedCards,
+            succeededConditions: result ? [condition] : []
         };
     }
 
@@ -91,19 +93,19 @@ function evaluateSimpleCondition(condition: CardCondition,
 
 function evaluateAndCondition(condition: LogicCondition, 
                               hand: Card[], 
-                              deck: Card[],
-                              succeededConditions: Map<Condition, number>): Result {
+                              deck: Card[]): Result {
     function evaluate(): Result {
         // init as a pass
-        const result: Result = { success: true, usedCards: [] };
+        const result: Result = { success: true, usedCards: [], succeededConditions: [] };
 
         const evaluate = (condition : Condition, hand : Card[], deck : Card[]): Result  =>{
-            const ret = checkCondition(condition, hand, deck, succeededConditions);
+            const ret = checkCondition(condition, hand, deck);
             if (!ret.success) {
                 // then if any result fails consider the overall failure (.every)
                 result.success = false;
             } else {
                 result.usedCards.push(...ret.usedCards);
+                result.succeededConditions.push(...ret.succeededConditions, condition);
             }
 
             return ret;
@@ -111,6 +113,10 @@ function evaluateAndCondition(condition: LogicCondition,
 
         evaluate(condition.conditionA, hand.filter(c => !result.usedCards.includes(c)), deck);
         evaluate(condition.conditionB, hand.filter(c => !result.usedCards.includes(c)), deck);
+
+        if (result.success) {
+            result.succeededConditions.push(condition);
+        }
         
         return result;
     }
@@ -120,34 +126,44 @@ function evaluateAndCondition(condition: LogicCondition,
 
 function evaluateOrCondition(condition: LogicCondition, 
                              hand: Card[], 
-                             deck: Card[],
-                             succeededConditions: Map<Condition, number>): Result {
+                             deck: Card[]): Result {
     function evaluate(): Result {
         // init as a fail
-        const result: Result = { success: false, usedCards: [] };
-        if (checkCondition(condition.conditionA, hand, deck, succeededConditions).success) {
+        const result: Result = { success: false, usedCards: [], succeededConditions: [] };
+        if (checkCondition(condition.conditionA, hand, deck).success) {
             result.success = true;
+            result.succeededConditions.push(condition.conditionA);
         }
-        if (checkCondition(condition.conditionB, hand, deck, succeededConditions).success) {
+        if (checkCondition(condition.conditionB, hand, deck).success) {
             result.success = true;
+            result.succeededConditions.push(condition.conditionB);
         }
-        
+
+        if (result.success) {
+            result.succeededConditions.push(condition);
+        }
+
         return result;
     }
 
     return evaluate();
 }
 
-function checkCondition(condition: Condition, hand: Card[], deck: Card[], succeededConditions: Map<Condition, number>): Result {
+export type EvaluationResult = {
+    success: boolean;
+    successfulConditions: Condition[];
+}
+
+function checkCondition(condition: Condition, hand: Card[], deck: Card[]): Result {
     let result;
     
     if (conditionIsLogical(condition)) {
         switch (condition.type) {
             case ConditionType.AND:
-                result = evaluateAndCondition(condition, hand, deck, succeededConditions);
+                result = evaluateAndCondition(condition, hand, deck);
                 break;
             case ConditionType.OR:
-                result = evaluateOrCondition(condition, hand, deck, succeededConditions);
+                result = evaluateOrCondition(condition, hand, deck);
                 break;
             default:
                 throw new Error(`Unknown condition type: ${condition.type}`);
@@ -156,32 +172,36 @@ function checkCondition(condition: Condition, hand: Card[], deck: Card[], succee
         result = evaluateSimpleCondition(condition, hand, deck);
     }
 
-    if (result.success) {
-        succeededConditions.set(condition, (succeededConditions.get(condition) || 0) + 1);
-    }
-
     return result;
 }
 
-export function evaluateCondition(condition: Condition, hand: Card[], deck: Card[]): boolean {
-    const succeededConditions: Map<Condition, number> = new Map<Condition, number>();
-    let result: boolean = false;
+export function evaluateCondition(condition: Condition, hand: Card[], deck: Card[]): EvaluationResult {
+    let succeededConditionList: Condition[] = [];
+    let result: Result = { success: false, usedCards: [], succeededConditions: [] };
 
     if (conditionIsLogical(condition) && conditionHasAnd(condition)) {
         const permutations = generateHandPermutations(hand);
 
         for (const hand of permutations) {
-            result = checkCondition(condition, hand, deck, succeededConditions).success
+            const succeededConditions: Condition[] = [];
+            result = checkCondition(condition, hand, deck);
             
-            if (result) {
+            if (succeededConditions.length > succeededConditionList.length) {
+                succeededConditionList = succeededConditions;
+            }
+
+            if (result.success) {
                 break;
             }
         }
     } else {
-        result = checkCondition(condition, hand, deck, succeededConditions).success;
+        result = checkCondition(condition, hand, deck);
     }
 
-    return result;
+    return {
+        success: result.success,
+        successfulConditions: Array.from(new Set(result.succeededConditions))
+    };
 }
 
 /**
@@ -212,7 +232,7 @@ export function cardsThatSatisfy(condition: Condition, list: Card[]): Map<Condit
 export function conditionToString(condition: Condition): string {
     if (conditionIsLogical(condition)) {
         const s = `${conditionToString(condition.conditionA)} ${condition.type.toUpperCase()} ${conditionToString(condition.conditionB)}`;
-        return condition.render.hasParentheses ? `(${s})` : s;
+        return condition.render?.hasParentheses ? `(${s})` : s;
     } else {
          return `${condition.cardCount}${condition.operator} ${condition.cardName} IN ${condition.location.toUpperCase()}`;
     }
