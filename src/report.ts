@@ -307,48 +307,50 @@ function processDiscardedCards(report: SimulationOutput, simulation: Simulation)
 }
 
 function processConditionStats(report: SimulationOutput, simulation: Simulation): void {
-    const processCondition = (simulation: Simulation, stats: ConditionStats, condition: Condition) => {
-        if (stats === undefined) {
-            console.error(`Condition statistics not found for condition: ${conditionToString(condition)}`);
-            return;
+    const processCondition = (stats: ConditionStats, condition: Condition, successMap: Map<Condition, number>) => {
+        // Check if the condition was successful
+        if (successMap.get(condition)) {
+            stats.successCount = (stats.successCount || 0) + (successMap.get(condition) || 0);
         }
-        
+
         if (condition.kind === 'logic') {
-            const evaluateCondition = (simulation: Simulation, subCondition: Condition): void => {
-                stats.subConditionStats = stats.subConditionStats || {};
-                if (stats.subConditionStats[conditionToString(subCondition)] === undefined) {
-                    stats.subConditionStats[conditionToString(subCondition)] = {
+            const evaluateSubCondition = (stats: ConditionStats, subCondition: Condition, successMap: Map<Condition, number>) => {
+                const subConditionString = conditionToString(subCondition);
+
+                if (stats.subConditionStats === undefined) {
+                    stats.subConditionStats = {};
+                }
+
+                if (stats.subConditionStats[subConditionString] === undefined) {
+                    stats.subConditionStats[subConditionString] = {
                         successCount: 0
                     };
                 }
 
-                if (simulation.conditionSuccesses(subCondition).get(subCondition)) {
-                    stats.subConditionStats[conditionToString(subCondition)].successCount = (stats.subConditionStats[conditionToString(subCondition)].successCount || 0) + (simulation.conditionSuccesses(subCondition).get(subCondition) || 0);
-                }
+                const subStats = stats.subConditionStats[subConditionString];
 
-                processCondition(simulation, stats.subConditionStats[conditionToString(subCondition)], subCondition);
+                processCondition(subStats, subCondition, successMap);
             }
 
-            evaluateCondition(simulation, condition.conditionA);
-            evaluateCondition(simulation, condition.conditionB);
+            evaluateSubCondition(stats, condition.conditionA, successMap);
+            evaluateSubCondition(stats, condition.conditionB, successMap);
         }
     };
 
     simulation.conditions.forEach(condition => {
         const conditionString = conditionToString(condition);
+
+        const successMap = simulation.conditionSuccesses(condition);
+
         if (report.conditionStats[conditionString] === undefined) {
             report.conditionStats[conditionString] = {
                 successCount: 0
             };
         }
 
-        if (simulation.conditionSuccesses(condition).get(condition)) {
-            report.conditionStats[conditionString].successCount = (report.conditionStats[conditionString].successCount || 0) + (simulation.conditionSuccesses(condition).get(condition) || 0);
-        }
+        const stats = report.conditionStats[conditionString];
 
-        processCondition(simulation, report.conditionStats[conditionToString(condition)], condition);
-
-        console.log(report.conditionStats[conditionToString(condition)]);
+        processCondition(stats, condition, successMap);
     });
 }
 

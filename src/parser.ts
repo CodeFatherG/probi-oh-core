@@ -91,7 +91,13 @@ function parse(tokens: Token[]): Condition {
                 current++;
 
                 if (expression.kind === 'logic') {
-                    expression.render.hasParentheses = true;
+                    if (expression.render) {
+                        expression.render.hasParentheses = true;
+                    } else {
+                        expression.render = {
+                            hasParentheses: true
+                        };
+                    }
                 }
 
                 return expression;
