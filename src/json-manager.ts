@@ -1,6 +1,12 @@
 import { CardDetails, Condition, SimulationInput } from "@probi-oh/types";
 import { DataFileManager } from './data-file';
 
+interface SerialableSimulationInput {
+    deckName?: string;
+    deck: Record<string, CardDetails>;
+    conditions: Condition[];
+}
+
 class JsonManager implements DataFileManager {
     private static instance: JsonManager;
 
@@ -51,9 +57,9 @@ class JsonManager implements DataFileManager {
         return input;
     }
 
-    public async exportDeckToString(cards: Map<string, CardDetails>): Promise<string> {
+    private mapToRecord(map: Map<string, CardDetails>): Record<string, CardDetails> {
         const deckObject: Record<string, CardDetails> = {};
-        Array.from(cards.entries()).forEach(([card, details]) => {
+        Array.from(map.entries()).forEach(([card, details]) => {
             if (card !== 'Empty Card') {
                 if (deckObject[card]) {
                     const cardDetails = deckObject[card];
@@ -65,6 +71,12 @@ class JsonManager implements DataFileManager {
                 }
             }
         });
+
+        return deckObject;
+    }
+
+    public async exportDeckToString(cards: Map<string, CardDetails>): Promise<string> {
+        const deckObject: Record<string, CardDetails> = this.mapToRecord(cards);
         return JSON.stringify(deckObject);
     }
 
@@ -81,15 +93,16 @@ class JsonManager implements DataFileManager {
      * @param input - The SimulationInput to serialise
      */
     public async exportSimulationToString(input: SimulationInput): Promise<string> {
-        const deck: Record<string, CardDetails> = {};
-
-        for (const [card, details] of input.deck) {
-            deck[card] = details;
+        const serial: SerialableSimulationInput = {
+            deck: this.mapToRecord(input.deck),
+            conditions: input.conditions,
         }
 
-        const deckYaml = await this.exportDeckToString(input.deck);
-        const conditionsYaml = await this.exportConditionsToString(input.conditions);
-        return deckYaml + '\n' + conditionsYaml;
+        if (input.deckName) {
+            serial.deckName = input.deckName;
+        }
+
+        return JSON.stringify(serial);
     }
 }
 

@@ -40,7 +40,7 @@ class YamlManager implements DataFileManager {
     public async importFromString(yamlString: string): Promise<SimulationInput> {
         try {
 
-            const input = yaml.load(yamlString) as { deck: Map<string, CardDetails>, conditions: string[] };
+            const input = yaml.load(yamlString) as { deck: Map<string, CardDetails>, conditions: string[], deckName?: string };
 
             // Validate deck structure
             for (const [cardName, cardDetails] of Object.entries(input.deck)) {
