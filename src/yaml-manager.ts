@@ -1,7 +1,8 @@
 import yaml from 'js-yaml';
-import { BaseCondition } from './condition';
-import { CardDetails, SimulationInput } from "@probi-oh/types";
+import { CardDetails, Condition, SimulationInput } from "@probi-oh/types";
 import { DataFileManager } from './data-file';
+import { conditionToString } from './condition';
+import { parseCondition } from './parser';
 
 class YamlManager implements DataFileManager {
     private static instance: YamlManager;
@@ -38,7 +39,8 @@ class YamlManager implements DataFileManager {
      */
     public async importFromString(yamlString: string): Promise<SimulationInput> {
         try {
-            const input = yaml.load(yamlString) as { deck: Map<string, CardDetails>, conditions: string[] };
+
+            const input = yaml.load(yamlString) as { deck: Map<string, CardDetails>, conditions: string[], deckName?: string };
 
             // Validate deck structure
             for (const [cardName, cardDetails] of Object.entries(input.deck)) {
@@ -50,9 +52,13 @@ class YamlManager implements DataFileManager {
                 }
             }
 
-            input.deck = this.getCardList(input.deck);
-
-            return input;
+            return {
+                deck: this.getCardList(input.deck),
+                conditions: input.conditions ? input.conditions.map(condition => {
+                    return parseCondition(condition);
+                }) : [],
+                deckName: input.deckName ?? "Unnamed Deck"
+            };
         } catch (error) {
             throw new Error(`Failed to parse YAML: ${(error as Error).message}`);
         }
@@ -79,8 +85,8 @@ class YamlManager implements DataFileManager {
      * serialises conditions to YAML format
      * @param conditions - The conditions to serialise
      */
-    public async exportConditionsToString(conditions: BaseCondition[]): Promise<string> {
-        const conditionStrings = conditions.map(condition => condition.toString());
+    public async exportConditionsToString(conditions: Condition[]): Promise<string> {
+        const conditionStrings = conditions.map(condition => conditionToString(condition));
         return yaml.dump({ conditions: conditionStrings });
     }
 

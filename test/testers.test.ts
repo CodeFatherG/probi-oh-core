@@ -1,7 +1,7 @@
 import { MockGameState } from './mock/game-state.mock';
 import { MockDeck } from './mock/deck.mock';
 import { Card, CreateCard } from '../src/card';
-import { AndCondition, BaseCondition, Condition, evaluateCondition, OrCondition } from '../src/condition';
+import { evaluateCondition } from '../src/condition';
 import { parseCondition } from './../src/parser';
 
 describe('testers', () => {
@@ -12,28 +12,36 @@ describe('testers', () => {
             const hand = [CreateCard('A', {}), CreateCard('Extender', {})];
             const deck = [CreateCard('A Garnet', {})];
 
-            expect(evaluateCondition(condition, hand, deck)).toBe(true);            
+            const result = evaluateCondition(condition, hand, deck);
+            expect(result.success).toBe(true);
+            expect(result.successfulConditions).toContain(condition);
         });
 
         it ('should pass for B condition', () => {
             const hand = [CreateCard('B', {}), CreateCard('Extender', {})];
             const deck = [CreateCard('B Garnet', {})];
 
-            expect(evaluateCondition(condition, hand, deck)).toBe(true);
+            const result = evaluateCondition(condition, hand, deck)
+            expect(result.success).toBe(true);
+            expect(result.successfulConditions).toContain(condition);
         });
 
         it ('should fail drawing A Garnet condition', () => {
             const hand: Card[] = [CreateCard('A', {}), CreateCard('Extender', {}), CreateCard('A Garnet', {})];
             const deck: Card[] = [];
 
-            expect(evaluateCondition(condition, hand, deck)).toBe(false);            
+            const result = evaluateCondition(condition, hand, deck);
+            expect(result.success).toBe(false);
+            expect(result.successfulConditions).not.toContain(condition);
         });
 
         it ('should fail drawing B Garnet condition', () => {
             const hand: Card[] = [CreateCard('B', {}), CreateCard('Extender', {}), CreateCard('B Garnet', {})];
             const deck: Card[] = [];
 
-            expect(evaluateCondition(condition, hand, deck)).toBe(false);
+            const result = evaluateCondition(condition, hand, deck);
+            expect(result.success).toBe(false);
+            expect(result.successfulConditions).not.toContain(condition);
         });
     });
 });

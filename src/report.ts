@@ -1,8 +1,8 @@
-import { CardStats, ConditionStats, SimulationOutput } from "@probi-oh/types";
+import { CardStats, Condition, ConditionStats, SimulationOutput } from "@probi-oh/types";
 import { GameState } from "./game-state";
 import { Simulation, SimulationBranch } from "./simulation";
 import { Card } from "./card";
-import { AndCondition, BaseCondition, OrCondition } from "./condition";
+import { conditionToString } from "./condition";
 
 function countCards(list: string[]): Map<string, number> {
     const counts = new Map<string, number>();
@@ -306,35 +306,52 @@ function processDiscardedCards(report: SimulationOutput, simulation: Simulation)
     });
 }
 
-function processConditionStats(report: SimulationOutput, condition: BaseCondition): void {
-    const processCondition = (stats: ConditionStats | undefined, condition: BaseCondition) => {
-        if (stats === undefined) {
-            console.error(`Condition statistics not found for condition: ${condition.toString()}`);
-            return;
+function processConditionStats(report: SimulationOutput, simulation: Simulation): void {
+    const processCondition = (stats: ConditionStats, condition: Condition, successMap: Map<Condition, number>) => {
+        // Check if the condition was successful
+        if (successMap.get(condition)) {
+            stats.successCount = (stats.successCount || 0) + (successMap.get(condition) || 0);
         }
-        
-        if (condition instanceof AndCondition || condition instanceof OrCondition) {
-            stats.subConditionStats = {};
 
-            for (const subCondition of condition.conditions) {
-                if (stats.subConditionStats[subCondition.toString()] === undefined) {
-                    stats.subConditionStats[subCondition.toString()] = {
-                        successCount: subCondition.successes,
-                    };
-                    processCondition(stats.subConditionStats[subCondition.toString()], subCondition);
+        if (condition.kind === 'logic') {
+            const evaluateSubCondition = (stats: ConditionStats, subCondition: Condition, successMap: Map<Condition, number>) => {
+                const subConditionString = conditionToString(subCondition);
+
+                if (stats.subConditionStats === undefined) {
+                    stats.subConditionStats = {};
                 }
+
+                if (stats.subConditionStats[subConditionString] === undefined) {
+                    stats.subConditionStats[subConditionString] = {
+                        successCount: 0
+                    };
+                }
+
+                const subStats = stats.subConditionStats[subConditionString];
+
+                processCondition(subStats, subCondition, successMap);
             }
+
+            evaluateSubCondition(stats, condition.conditionA, successMap);
+            evaluateSubCondition(stats, condition.conditionB, successMap);
         }
     };
 
-    console.log(`Processing condition: ${condition.toString()}`);
+    simulation.conditions.forEach(condition => {
+        const conditionString = conditionToString(condition);
 
-    report.conditionStats[condition.toString()] = {
-        successCount: condition.successes,
-    }
-    processCondition(report.conditionStats[condition.toString()], condition);
+        const successMap = simulation.conditionSuccesses(condition);
 
-    console.log(report.conditionStats[condition.toString()]);
+        if (report.conditionStats[conditionString] === undefined) {
+            report.conditionStats[conditionString] = {
+                successCount: 0
+            };
+        }
+
+        const stats = report.conditionStats[conditionString];
+
+        processCondition(stats, condition, successMap);
+    });
 }
 
 function processSimulations(simulations: Simulation[]): SimulationOutput {
@@ -356,11 +373,8 @@ function processSimulations(simulations: Simulation[]): SimulationOutput {
         // Check game state statistics
         processBanishedCards(report, simulation);
         processDiscardedCards(report, simulation);
-    }
 
-    // Process condition statistics. Condition objects are constant so we can use the first simulation
-    if (simulations.length > 0) {
-        simulations[0].conditions.forEach(condition => processConditionStats(report, condition));
+        processConditionStats(report, simulation)
     }
 
     return report;

@@ -1,9 +1,10 @@
 import { Simulation, SimulationBranch, runSimulation } from '../src/simulation';
 import { GameState } from '../src/game-state';
-import { BaseCondition, Condition, AndCondition, OrCondition, evaluateCondition } from '../src/condition';
+import { evaluateCondition } from '../src/condition';
 import { Card, CreateCard, FreeCard } from '../src/card';
 import { freeCardIsUsable, processFreeCard } from '../src/free-card-processor';
 import { Deck } from '../src/deck';
+import { Condition } from '@probi-oh/types';
 
 // Mock dependencies
 jest.mock('../src/game-state');
@@ -17,7 +18,7 @@ jest.mock('../src/deck');
 
 describe('Simulation', () => {
     let mockGameState: jest.Mocked<GameState>;
-    let mockCondition: jest.Mocked<BaseCondition>;
+    let mockCondition: jest.Mocked<Condition>;
     let mockDeck: jest.Mocked<Deck>;
     let mockHand: Card[] = [];
     let mockCardsPlayedThisTurn: Card[] = [];
@@ -26,11 +27,7 @@ describe('Simulation', () => {
         mockDeck = new Deck([]) as jest.Mocked<Deck>;
         mockGameState = new GameState(mockDeck) as jest.Mocked<GameState>;
         mockCondition = {
-            requiredCards: jest.fn(),
-            toString: jest.fn(),
-            recordSuccess: jest.fn(),
-            successes: 0
-        } as unknown as jest.Mocked<BaseCondition>;
+        } as unknown as jest.Mocked<Condition>;
         
         // Mock GameState properties and methods
         mockGameState.deepCopy.mockReturnValue(mockGameState);
@@ -84,7 +81,10 @@ describe('Simulation', () => {
     });
 
     test('iterate runs a single branch when condition is met', () => {
-        (evaluateCondition as jest.Mock).mockReturnValue(true);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: true,
+            successfulConditions: [mockCondition],
+        });
         const simulation = new Simulation(mockGameState, [mockCondition]);
         simulation.iterate();
         expect(simulation.result).toBe(true);
@@ -93,7 +93,10 @@ describe('Simulation', () => {
     });
 
     test('iterate generates free card permutations when condition is not met', () => {
-        (evaluateCondition as jest.Mock).mockReturnValue(false);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: false,
+            successfulConditions: [],
+        });
         const mockFreeCard1 = CreateCard('FreeCard1', { free: { oncePerTurn: false } }) as FreeCard;
         const mockFreeCard2 = CreateCard('FreeCard2', { free: { oncePerTurn: false } }) as FreeCard;
         mockHand = [mockFreeCard1, mockFreeCard2];
@@ -109,8 +112,14 @@ describe('Simulation', () => {
 
     test('successfulBranch returns the first successful branch', () => {
         (evaluateCondition as jest.Mock)
-            .mockReturnValueOnce(false)
-            .mockReturnValueOnce(true);
+            .mockReturnValueOnce({
+                success: false,
+                successfulConditions: [],
+            })
+            .mockReturnValueOnce({
+                success: true,
+                successfulConditions: [mockCondition],
+            });
         const mockFreeCard = CreateCard('FreeCard', { free: { oncePerTurn: false } }) as FreeCard;
         mockHand = [mockFreeCard];
         // Update the mock getters
@@ -122,27 +131,11 @@ describe('Simulation', () => {
         expect(simulation.successfulBranches[0][1]).toBeDefined();
         expect(simulation.successfulBranches[0][1]?.result).toBe(true);
     });
-
-    // test('failedBranches returns all failed branches', () => {
-    //     (evaluateCondition as jest.Mock).mockReturnValue(false);
-    //     const mockFreeCard = CreateCard('FreeCard', { free: { oncePerTurn: false } }) as FreeCard;
-    //     mockHand = [mockFreeCard];
-    //     // Update the mock getters
-    //     (freeCardIsUsable as jest.Mock).mockReturnValue(true);
-
-    //     const simulation = new Simulation(mockGameState, [mockCondition]);
-    //     simulation.iterate();
-
-    //     expect(simulation.failedBranches.length).toBe(1);
-    //     expect(simulation.failedBranches[0][0]).toBe(mockCondition);
-    //     expect(Array.isArray(simulation.failedBranches[0][1])).toBe(true);
-    //     expect(simulation.failedBranches[0][1]?.every(branch => !branch.result)).toBe(true);
-    // });
 });
 
 describe('SimulationBranch', () => {
     let mockGameState: jest.Mocked<GameState>;
-    let mockCondition: jest.Mocked<BaseCondition>;
+    let mockCondition: jest.Mocked<Condition>;
     let mockDeck: jest.Mocked<Deck>;
     let mockHand: Card[] = [];
     let mockCardsPlayedThisTurn: Card[] = [];
@@ -151,11 +144,7 @@ describe('SimulationBranch', () => {
         mockDeck = new Deck([]) as jest.Mocked<Deck>;
         mockGameState = new GameState(mockDeck) as jest.Mocked<GameState>;
         mockCondition = {
-            requiredCards: jest.fn(),
-            toString: jest.fn(),
-            recordSuccess: jest.fn(),
-            successes: 0
-        } as unknown as jest.Mocked<BaseCondition>;
+        } as unknown as jest.Mocked<Condition>;
         mockGameState.deepCopy.mockReturnValue(mockGameState);
         
         // Mock other properties
@@ -192,7 +181,10 @@ describe('SimulationBranch', () => {
     });
 
     test('run evaluates condition and updates result', () => {
-        (evaluateCondition as jest.Mock).mockReturnValue(true);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: true,
+            successfulConditions: [mockCondition],
+        });
         const branch = new SimulationBranch(mockGameState, mockCondition);
         branch.run();
         expect(branch.result).toBe(true);
@@ -208,11 +200,7 @@ describe('runSimulation', () => {
         const mockDeck = new Deck([]) as jest.Mocked<Deck>;
         const mockGameState = new GameState(mockDeck) as jest.Mocked<GameState>;
         const mockCondition = {
-            requiredCards: jest.fn(),
-            toString: jest.fn(),
-            recordSuccess: jest.fn(),
-            successes: 0
-        } as unknown as jest.Mocked<BaseCondition>;
+        } as unknown as jest.Mocked<Condition>;
         mockGameState.deepCopy.mockReturnValue(mockGameState);
         
         // Mock other properties
@@ -238,7 +226,10 @@ describe('runSimulation', () => {
         });
 
         // Mock evaluateCondition function
-        (evaluateCondition as jest.Mock).mockReturnValue(true);
+        (evaluateCondition as jest.Mock).mockReturnValue({
+            success: true,
+            successfulConditions: [mockCondition],
+        });
 
         const result = runSimulation(mockGameState, [mockCondition]);
 
