@@ -54,9 +54,9 @@ class YamlManager implements DataFileManager {
 
             return {
                 deck: this.getCardList(input.deck),
-                conditions: input.conditions ? Array.from(input.conditions.flatMap(condition => {
+                conditions: input.conditions ? input.conditions.map(condition => {
                     return parseCondition(condition);
-                })) : [],
+                }) : [],
                 deckName: input.deckName ?? "Unnamed Deck"
             };
         } catch (error) {
