@@ -1,6 +1,5 @@
 import { CardDetails, Condition, SimulationInput } from "@probi-oh/types";
 import { DataFileManager } from './data-file';
-import { conditionToString } from './condition';
 
 class JsonManager implements DataFileManager {
     private static instance: JsonManager;

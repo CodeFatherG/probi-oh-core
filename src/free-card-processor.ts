@@ -1,5 +1,5 @@
 import { Card, FreeCard } from "./card";
-import { Condition, ConditionType, FreeCardCondition, FreeCardCost, FreeCardRestriction } from "@probi-oh/types";
+import { Condition, FreeCardCondition, FreeCardCost, FreeCardRestriction } from "@probi-oh/types";
 import { SimulationBranch } from "./simulation";
 import { GameState } from './game-state';
 import { cardsThatSatisfy, matchCards } from "./condition";
