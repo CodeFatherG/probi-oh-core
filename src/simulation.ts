@@ -129,8 +129,8 @@ export class Simulation {
     }
 
     /** Get the branches that failed */
-    public get failedBranches(): [Condition, SimulationBranch[] | undefined][] {
-        return Array.from(this._branches).map(([condition, branches]) => [condition, branches.find(branch => !branch.result)]) as [Condition, SimulationBranch[] | undefined][];
+    public get failedBranches(): [Condition, SimulationBranch[]][] {
+        return Array.from(this._branches).map(([condition, branches]) => [condition, branches.filter(branch => !branch.result)]) as [Condition, SimulationBranch[]][];
     }
 
     public conditionSuccesses(condition: Condition): Map<Condition, number> {
