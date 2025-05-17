@@ -403,13 +403,15 @@ describe('parseCondition', () => {
         expect((result as LogicCondition).type).toBe(ConditionType.OR);
 
             const parenCond = result as LogicCondition;
-            expect(parenCond.render.hasParentheses).toBe(true);
+            expect(parenCond).toHaveProperty('render');
+            expect(parenCond.render).toHaveProperty('hasParentheses', true);
             expect(parenCond.conditionA).toHaveProperty('kind', 'logic');
             expect(parenCond.conditionA).toHaveProperty('type', ConditionType.OR);
             expect(parenCond.conditionB).toHaveProperty('kind', 'card');
 
             const nestedOr1 = parenCond.conditionA as LogicCondition;
-            expect(nestedOr1.render.hasParentheses).toBe(false);
+            expect(nestedOr1).toHaveProperty('render');
+            expect(nestedOr1.render).toHaveProperty('hasParentheses', false);
             expect(nestedOr1.conditionA).toHaveProperty('kind', 'card');
             expect(nestedOr1.conditionB).toHaveProperty('kind', 'card');
         });
@@ -422,19 +424,22 @@ describe('parseCondition', () => {
         expect((result as LogicCondition).type).toBe(ConditionType.OR);
 
             const parenCond = result as LogicCondition;
-            expect(parenCond.render.hasParentheses).toBe(true);
+            expect(parenCond).toHaveProperty('render');
+            expect(parenCond.render).toHaveProperty('hasParentheses', true);
             expect(parenCond.conditionA).toHaveProperty('kind', 'logic');
             expect(parenCond.conditionA).toHaveProperty('type', ConditionType.OR);
             expect(parenCond.conditionB).toHaveProperty('kind', 'logic');
             expect(parenCond.conditionB).toHaveProperty('type', ConditionType.AND);
 
             const nestedOr1 = parenCond.conditionA as LogicCondition;
-            expect(nestedOr1.render.hasParentheses).toBe(false);
+            expect(nestedOr1).toHaveProperty('render');
+            expect(nestedOr1.render).toHaveProperty('hasParentheses', false);
             expect(nestedOr1.conditionA).toHaveProperty('kind', 'card');
             expect(nestedOr1.conditionB).toHaveProperty('kind', 'card');
 
             const nestedAnd = parenCond.conditionB as LogicCondition;
-            expect(nestedAnd.render.hasParentheses).toBe(true);
+            expect(nestedAnd).toHaveProperty('render');
+            expect(nestedAnd.render).toHaveProperty('hasParentheses', true);
             expect(nestedAnd.conditionA).toHaveProperty('kind', 'card');
             expect(nestedAnd.conditionB).toHaveProperty('kind', 'card');
         });

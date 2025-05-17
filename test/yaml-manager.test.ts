@@ -86,8 +86,27 @@ describe('YAML Manager', () => {
             expect(result.conditions).toHaveLength(2);
             expect(result.deck.get('Card1')?.qty).toBe(3);
             expect(result.deck.get('Card2')?.qty).toBe(2);
-            expect(result.conditions[0]).toBe('2+ Card1');
-            expect(result.conditions[1]).toBe('(1 Card2 OR 2 Card1)');
+            expect(result.conditions[0]).toHaveProperty('kind', 'card');
+            expect(result.conditions[0]).toHaveProperty('cardName', 'Card1');
+            expect(result.conditions[0]).toHaveProperty('cardCount', 2);
+            expect(result.conditions[0]).toHaveProperty('operator', ConditionOperator.AT_LEAST);
+            expect(result.conditions[0]).toHaveProperty('location', ConditionLocation.HAND);
+            expect((result.conditions[1] as LogicCondition)).toHaveProperty('kind', 'logic');
+            expect((result.conditions[1] as LogicCondition)).toHaveProperty('type', ConditionType.OR);
+            expect((result.conditions[1] as LogicCondition)).toHaveProperty('render');
+            expect((result.conditions[1] as LogicCondition).render).toHaveProperty('hasParentheses', true);
+            expect((result.conditions[1] as LogicCondition)).toHaveProperty('conditionA');
+            expect((result.conditions[1] as LogicCondition)).toHaveProperty('conditionB');
+            expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('kind', 'card');
+            expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('cardName', 'Card2');
+            expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('cardCount', 1);
+            expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('operator', ConditionOperator.EXACTLY);
+            expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('location', ConditionLocation.HAND);
+            expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('kind', 'card');
+            expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('cardName', 'Card1');
+            expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('cardCount', 2);
+            expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('operator', ConditionOperator.EXACTLY);
+            expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('location', ConditionLocation.HAND);
         });
 
         it('should handle no quantity specified', async () => {
@@ -235,9 +254,32 @@ describe('YAML Manager', () => {
                 ['Card1', { tags: ['Tag1'] }],
                 ['Card2', { tags: ['Tag2'] }]
             ]);
-            const conditions = [
-                '1+ Card1',
-                '(Card1 AND Card2)'
+            const conditions: Condition[] = [
+                {
+                    kind: 'card',
+                    cardName: 'Card1',
+                    cardCount: 2,
+                    operator: ConditionOperator.AT_LEAST,
+                    location: ConditionLocation.HAND
+                },
+                {
+                    kind: 'logic',
+                    type: ConditionType.OR,
+                    conditionA: {
+                        kind: 'card',
+                        cardName: 'Card2',
+                        cardCount: 1,
+                        operator: ConditionOperator.EXACTLY,
+                        location: ConditionLocation.HAND
+                    },
+                    conditionB: {
+                        kind: 'card',
+                        cardName: 'Card1',
+                        cardCount: 2,
+                        operator: ConditionOperator.AT_LEAST,
+                        location: ConditionLocation.HAND
+                    }
+                }
             ];
             const input: SimulationInput = { deck, conditions };
             const result = await yamlManager.exportSimulationToString(input);
@@ -267,8 +309,27 @@ describe('Edge Cases', () => {
         
         expect(result.deck.size).toBe(2);
         expect(result.conditions).toHaveLength(2);
-        expect(result.conditions[0]).toBe('2+ 1');
-        expect(result.conditions[1]).toBe('(1 2 OR 2 1)');
+        expect(result.conditions[0]).toHaveProperty('kind', 'card');
+        expect(result.conditions[0]).toHaveProperty('cardName', '1');
+        expect(result.conditions[0]).toHaveProperty('cardCount', 2);
+        expect(result.conditions[0]).toHaveProperty('operator', ConditionOperator.AT_LEAST);
+        expect(result.conditions[0]).toHaveProperty('location', ConditionLocation.HAND);
+        expect(result.conditions[1]).toHaveProperty('kind', 'logic');
+        expect((result.conditions[1] as LogicCondition)).toHaveProperty('type', ConditionType.OR);
+        expect((result.conditions[1] as LogicCondition)).toHaveProperty('render');
+        expect((result.conditions[1] as LogicCondition).render).toHaveProperty('hasParentheses', true);
+        expect((result.conditions[1] as LogicCondition)).toHaveProperty('conditionA');
+        expect((result.conditions[1] as LogicCondition)).toHaveProperty('conditionB');
+        expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('kind', 'card');
+        expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('cardName', '2');
+        expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('cardCount', 1);
+        expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('operator', ConditionOperator.EXACTLY);
+        expect((result.conditions[1] as LogicCondition).conditionA).toHaveProperty('location', ConditionLocation.HAND);
+        expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('kind', 'card');
+        expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('cardName', '1');
+        expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('cardCount', 2);
+        expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('operator', ConditionOperator.EXACTLY);
+        expect((result.conditions[1] as LogicCondition).conditionB).toHaveProperty('location', ConditionLocation.HAND);
     });
 
     describe('Handle "" card names', () => {
@@ -285,7 +346,11 @@ describe('Edge Cases', () => {
             
             expect(result.deck.size).toBe(1);
             expect(result.conditions).toHaveLength(1);
-            expect(result.conditions[0]).toBe('2+ "Card A"');
+            expect(result.conditions[0]).toHaveProperty('kind', 'card');
+            expect(result.conditions[0]).toHaveProperty('cardName', '"Card A"');
+            expect(result.conditions[0]).toHaveProperty('cardCount', 2);
+            expect(result.conditions[0]).toHaveProperty('operator', ConditionOperator.AT_LEAST);
+            expect(result.conditions[0]).toHaveProperty('location', ConditionLocation.HAND);
         });
     });
 });
