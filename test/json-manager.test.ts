@@ -34,9 +34,9 @@ describe('JsonManager', () => {
       const result = await JsonManager.importFromString(jsonString);
 
       expect(result.deckName).toBe('Test Deck');
-      expect(result.deck.size).toBe(2);
-      expect(result.deck.get('Card A')).toEqual({ qty: 3, tags: ['tag1', 'tag2'] });
-      expect(result.deck.get('Card B')).toEqual({ qty: 2, tags: ['tag3'] });
+      expect(Object.keys(result.deck).length).toBe(2);
+      expect(result.deck['Card A']).toEqual({ qty: 3, tags: ['tag1', 'tag2'] });
+      expect(result.deck['Card B']).toEqual({ qty: 2, tags: ['tag3'] });
       expect(result.conditions.length).toBe(1);
       expect(result.conditions[0]).toEqual({
         kind: 'card',
@@ -58,7 +58,7 @@ describe('JsonManager', () => {
       const result = await JsonManager.importFromString(jsonString);
 
       expect(result.deckName).toBeUndefined();
-      expect(result.deck.size).toBe(1);
+      expect(Object.keys(result.deck).length).toBe(1);
       expect(result.conditions.length).toBe(0);
     });
 
@@ -72,16 +72,19 @@ describe('JsonManager', () => {
 
       const result = await JsonManager.importFromString(jsonString);
       
-      expect(result.deck.get('Card A')).toEqual({ qty: 1, tags: ['tag1'] });
+      expect(result.deck['Card A'].qty).toEqual(1);
+      expect(result.deck['Card A'].tags?.length).toBe(1);
+      expect(result.deck['Card A'].tags).toContainEqual('tag1');
     });
   });
 
   // Test exportDeckToString method
   describe('exportDeckToString', () => {
     it('should correctly convert a deck to JSON string', async () => {
-      const deck = new Map<string, CardDetails>();
-      deck.set('Card A', { qty: 3, tags: ['tag1', 'tag2'] });
-      deck.set('Card B', { qty: 2, tags: ['tag3'] });
+      const deck = {      
+        'Card A': { qty: 3, tags: ['tag1', 'tag2'] },
+        'Card B': { qty: 2, tags: ['tag3'] },
+      };
 
       const result = await JsonManager.exportDeckToString(deck);
       const parsed = JSON.parse(result);
@@ -93,10 +96,10 @@ describe('JsonManager', () => {
     });
 
     it('should skip "Empty Card" entries', async () => {
-      const deck = new Map<string, CardDetails>();
-      deck.set('Card A', { qty: 1 });
-      deck.set('Empty Card', { qty: 1 });
-
+      const deck = {
+        'Card A': { qty: 1 },
+        'Empty Card': { qty: 1 },
+      };
       const result = await JsonManager.exportDeckToString(deck);
       const parsed = JSON.parse(result);
 
@@ -107,12 +110,11 @@ describe('JsonManager', () => {
     });
 
     it('should combine duplicate card entries', async () => {
-      const deck = new Map<string, CardDetails>();
-      deck.set('Card A', { qty: 1, tags: ['tag1'] });
-      deck.set('Card B', { qty: 1, tags: ['tag2'] });
-      // Add another Card A, simulating how the map would be populated
-      deck.set('Card A-2', { qty: 1, tags: ['tag1'] });
-
+      const deck = {
+        'Card A': { qty: 1, tags: ['tag1'] },
+        'Card B': { qty: 1, tags: ['tag2'] },
+        'Card A-2': { qty: 1, tags: ['tag1'] },
+      }
       const result = await JsonManager.exportDeckToString(deck);
       const parsed = JSON.parse(result);
 
@@ -174,10 +176,10 @@ describe('JsonManager', () => {
   // Test exportSimulationToString method
   describe('exportSimulationToString', () => {
     it('should correctly convert a simulation input to string', async () => {
-      const deck = new Map<string, CardDetails>();
-      deck.set('Card A', { qty: 3, tags: ['tag1'] });
-      deck.set('Card B', { qty: 2, tags: ['tag2'] });
-
+      const deck = {
+        'Card A': { qty: 3, tags: ['tag1'] },
+        'Card B': { qty: 2, tags: ['tag2'] },
+      };
       const conditions: Condition[] = [
         {
           kind: 'card',
@@ -204,14 +206,10 @@ describe('JsonManager', () => {
 
       const result = await JsonManager.exportSimulationToString(simulationInput);
 
-      // // Verify the methods were called with the correct parameters
-      // expect(exportDeckSpy).toHaveBeenCalledWith(deck);
-      // expect(exportConditionsSpy).toHaveBeenCalledWith(conditions);
-
       // Verify the result is a concatenation of the two strings with a newline
-      expect(result).toContain('{"deck":{"Card A":{"qty":3,"tags":["tag1"]},"Card B":{"qty":2,"tags":["tag2"]}}');
+      expect(result).toContain('"deck":{"Card A":{"qty":3,"tags":["tag1"]},"Card B":{"qty":2,"tags":["tag2"]}');
       expect(result).toContain('"conditions":[{"kind":"card","cardName":"Card A","cardCount":2,"operator":"+","location":"hand"}]');
-      expect(result).toContain('"deckName":"Test Deck"}');
+      expect(result).toContain('"deckName":"Test Deck"');
 
       // Restore the spies
       exportDeckSpy.mockRestore();
@@ -232,9 +230,9 @@ describe('JsonManager', () => {
 
       const result = await JsonManager.importFromString(jsonString);
       
-      expect(result.deck.size).toBe(2);
-      expect(result.deck.get('Card A')).toEqual({ qty: 3 });
-      expect(result.deck.get('Card B')).toEqual({ qty: 1, tags: ['tag1'] });
+      expect(Object.keys(result.deck).length).toBe(2);
+      expect(result.deck['Card A']).toEqual({ qty: 3 });
+      expect(result.deck['Card B']).toEqual({ qty: 1, tags: ['tag1'] });
     });
   });
 });
