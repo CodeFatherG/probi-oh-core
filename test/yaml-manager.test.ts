@@ -84,8 +84,8 @@ describe('YAML Manager', () => {
             const result = await yamlManager.importFromString(yamlString);
             
             expect(result.conditions).toHaveLength(2);
-            expect(result.deck.get('Card1')?.qty).toBe(3);
-            expect(result.deck.get('Card2')?.qty).toBe(2);
+            expect(result.deck['Card1']?.qty).toBe(3);
+            expect(result.deck['Card2']?.qty).toBe(2);
             expect(result.conditions[0]).toHaveProperty('kind', 'card');
             expect(result.conditions[0]).toHaveProperty('cardName', 'Card1');
             expect(result.conditions[0]).toHaveProperty('cardCount', 2);
@@ -117,9 +117,8 @@ describe('YAML Manager', () => {
             `;
             const result = await yamlManager.importFromString(yamlString);
             
-            expect(result.deck).toBeInstanceOf(Map);
-            expect(result.deck.size).toBe(1);
-            expect(result.deck.get('Card1')?.qty).toBe(1);
+            expect(Object.keys(result.deck).length).toBe(1);
+            expect(result.deck['Card1']?.qty).toBe(1);
         });
 
         it('should throw an error for invalid deck structure', async () => {
@@ -145,10 +144,10 @@ describe('YAML Manager', () => {
 
     describe('serialiseDeckToYaml', () => {
         it('should correctly serialise a deck to YAML', async () => {
-            const cards = new Map<string, CardDetails>([
-                ['Card1', { qty: 2, tags: ['Tag1', 'Tag2'] }],
-                ['Card2', { tags: ['Tag3'] }]
-            ]);
+            const cards = {
+                'Card1': { qty: 2, tags: ['Tag1', 'Tag2'] },
+                'Card2': { tags: ['Tag3'] }
+            };
             const result = await yamlManager.exportDeckToString(cards);
             const parsed = yaml.load(result) as { deck: any };
             expect(parsed.deck.Card1.qty).toBe(2);
@@ -156,10 +155,10 @@ describe('YAML Manager', () => {
         });
 
         it('should correctly handle duplicate cards', async () => {
-            const cards = new Map<string, CardDetails>([
-                ['Card1', { qty: 2, tags: ['Tag1'] }],
-                ['Card2', { tags: ['Tag2'] }],
-            ]);
+            const cards = {
+                'Card1': { qty: 2, tags: ['Tag1'] },
+                'Card2': { tags: ['Tag2'] }
+            };
             const result = await yamlManager.exportDeckToString(cards);
             const parsed = yaml.load(result) as { deck: any };
             expect(parsed.deck.Card1.qty).toBe(2);
@@ -250,10 +249,10 @@ describe('YAML Manager', () => {
 
     describe('serialiseSimulationInputToYaml', () => {
         it('should correctly serialise a complete simulation input to YAML', async () => {
-            const deck = new Map([
-                ['Card1', { tags: ['Tag1'] }],
-                ['Card2', { tags: ['Tag2'] }]
-            ]);
+            const deck = {
+                'Card1': { tags: ['Tag1'] },
+                'Card2': { tags: ['Tag2'] }
+            };
             const conditions: Condition[] = [
                 {
                     kind: 'card',
@@ -283,10 +282,23 @@ describe('YAML Manager', () => {
             ];
             const input: SimulationInput = { deck, conditions };
             const result = await yamlManager.exportSimulationToString(input);
+
+            expect(result).toContain('deck:');
+            expect(result).toContain('Card1:');
+            expect(result).toContain('Card2:');
+            expect(result).toContain('conditions:');
+            expect(result).toContain('2+ Card1 IN HAND');
+            expect(result).toContain('1 Card2 IN HAND OR 2+ Card1 IN HAND');
+
             const parsed = yaml.load(result) as { deck: any, conditions: string[] };
-            expect(parsed.deck.Card1.qty).toBe(undefined);
-            expect(parsed.deck.Card2.qty).toBe(undefined);
-            expect(parsed.conditions).toHaveLength(2);
+            expect(parsed).toHaveProperty('deck');
+            expect(parsed.deck).toHaveProperty('Card1');
+            expect(parsed.deck).toHaveProperty('Card2');
+            expect(parsed.deck.Card1.tags).toEqual(['Tag1']);
+            expect(parsed.deck.Card2.tags).toEqual(['Tag2']);
+            expect(parsed).toHaveProperty('conditions');
+            expect(parsed.conditions).toContain('2+ Card1 IN HAND');
+            expect(parsed.conditions).toContain('1 Card2 IN HAND OR 2+ Card1 IN HAND');
         });
     });
 });
@@ -307,7 +319,7 @@ describe('Edge Cases', () => {
         `;
         const result = await yamlManager.importFromString(yamlString);
         
-        expect(result.deck.size).toBe(2);
+        expect(Object.keys(result.deck).length).toBe(2);
         expect(result.conditions).toHaveLength(2);
         expect(result.conditions[0]).toHaveProperty('kind', 'card');
         expect(result.conditions[0]).toHaveProperty('cardName', '1');
@@ -344,7 +356,7 @@ describe('Edge Cases', () => {
             `;
             const result = await yamlManager.importFromString(yamlString);
             
-            expect(result.deck.size).toBe(1);
+            expect(Object.keys(result.deck).length).toBe(1);
             expect(result.conditions).toHaveLength(1);
             expect(result.conditions[0]).toHaveProperty('kind', 'card');
             expect(result.conditions[0]).toHaveProperty('cardName', '"Card A"');

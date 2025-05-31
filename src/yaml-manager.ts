@@ -19,15 +19,15 @@ class YamlManager implements DataFileManager {
      * @param deckList - Record of card names and their details
      * @returns A new Deck instance
      */
-    private getCardList(deckList: Map<string, CardDetails> | Record<string, CardDetails>): Map<string, CardDetails> {
-        const cards: Map<string, CardDetails> = new Map<string, CardDetails>();
+    private getCardList(deckList: Map<string, CardDetails> | Record<string, CardDetails>): Record<string, CardDetails> {
+        const cards: Record<string, CardDetails> = {};
         for (const [card, details] of Object.entries(deckList)) {
             const qty = details.qty ?? 1;
 
             details.qty = qty;
 
             // Add the card
-            cards.set(card, details);
+            cards[card] = details;
         }
 
         return cards;
@@ -64,21 +64,8 @@ class YamlManager implements DataFileManager {
         }
     }
 
-    public async exportDeckToString(cards: Map<string, CardDetails>): Promise<string> {
-        const deckObject: Record<string, CardDetails> = {};
-        Array.from(cards.entries()).forEach(([card, details]) => {
-            if (card !== 'Empty Card') {
-                if (deckObject[card]) {
-                    const cardDetails = deckObject[card];
-                    if (cardDetails) {
-                        cardDetails.qty = (cardDetails.qty || 1) + 1;
-                    }
-                } else {
-                    deckObject[card] = details;
-                }
-            }
-        });
-        return yaml.dump({ deck: deckObject });
+    public async exportDeckToString(cards: Record<string, CardDetails>): Promise<string> {
+        return yaml.dump({ deck: cards });
     }
 
     /**
@@ -95,14 +82,8 @@ class YamlManager implements DataFileManager {
      * @param input - The SimulationInput to serialise
      */
     public async exportSimulationToString(input: SimulationInput): Promise<string> {
-        const deck: Record<string, CardDetails> = {};
-
-        for (const [card, details] of input.deck) {
-            deck[card] = details;
-        }
-
         const deckYaml = await this.exportDeckToString(input.deck);
-        const conditionsYaml = yaml.dump({ conditions: input.conditions });
+        const conditionsYaml = await this.exportConditionsToString(input.conditions);
         return deckYaml + '\n' + conditionsYaml;
     }
 }
